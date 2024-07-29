@@ -19,6 +19,8 @@ contract StudentRegistry {
 
     event InsertionLog(address indexed owner, string message);
 
+    event DeletionLog(address indexed owner, string message);
+
     //dynamic array of students
     Student[] private students;
 
@@ -89,5 +91,6 @@ contract StudentRegistry {
 
         studentsMapping[_studentAddr] = student;
 
+        emit DeletionLog(msg.sender, "Student deleted");
     }
 }
