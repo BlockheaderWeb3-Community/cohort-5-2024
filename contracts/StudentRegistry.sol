@@ -16,6 +16,11 @@ contract StudentRegistry {
         owner = msg.sender;
     }
 
+
+    event InsertionLog(address indexed owner, string message);
+
+    event DeletionLog(address indexed owner, string message);
+
     //dynamic array of students
     Student[] private students;
 
@@ -51,6 +56,7 @@ contract StudentRegistry {
         students.push(student);
         // add student to studentsMapping
         studentsMapping[_studentAddr] = student;
+        emit InsertionLog(msg.sender, "New student added");
     }
 
     function getStudent(uint8 _studentId) public isNotAddressZero view returns (Student memory) {
@@ -85,5 +91,6 @@ contract StudentRegistry {
 
         studentsMapping[_studentAddr] = student;
 
+        emit DeletionLog(msg.sender, "Student deleted");
     }
 }
