@@ -11,15 +11,15 @@ contract StudentRegistry {
     }
 
     address public owner;
-
-    constructor() {
-        owner = msg.sender;
-    }
+    uint256 public fee; // Fee for the getStudent function
 
     //dynamic array of students
     Student[] private students;
 
     mapping(address => Student) public studentsMapping;
+    event FeeUpdated(uint256 newFee);
+    event Balance(uint256 balance);
+
 
     modifier onlyOwner () {
         require( owner == msg.sender, "You fraud!!!");
@@ -31,11 +31,25 @@ contract StudentRegistry {
         _;
     }
 
+    constructor(uint256 _fee) {
+        owner = msg.sender;
+        fee = _fee;
+        // fee = 10 ether;
+    }
+ 
+    receive() external payable {}
+
+    // Owner can chahge fee
+    function setFee(uint256 _newFee) public onlyOwner {
+        fee = _newFee;
+        emit FeeUpdated(_newFee);
+    }
+
     function addStudent(
         address _studentAddr,
         string memory _name,
         uint8 _age
-    ) public onlyOwner isNotAddressZero {
+     ) public onlyOwner isNotAddressZero {
 
         require( bytes(_name).length > 0, "Name cannot be blank");
         require( _age >= 18, "This student is under age");
@@ -51,12 +65,15 @@ contract StudentRegistry {
         students.push(student);
         // add student to studentsMapping
         studentsMapping[_studentAddr] = student;
+ 
     }
 
-    function getStudent(uint8 _studentId) public isNotAddressZero view returns (Student memory) {
+    // Take ether on getStudent request
+    function getStudent(uint8 _studentId) public payable isNotAddressZero returns (Student memory) {
+         require(msg.value >= fee, "Insufficient fee sent");
+        // The fee will be stored in the contract
         return students[_studentId - 1];
     }
-
 
 
     function getStudentFromMapping(address _studentAddr)
@@ -65,6 +82,7 @@ contract StudentRegistry {
         view
         returns (Student memory)
     {
+       
         return studentsMapping[_studentAddr];
     }
 
@@ -85,5 +103,21 @@ contract StudentRegistry {
 
         studentsMapping[_studentAddr] = student;
 
+    }
+
+    // View Contract balance
+     function getBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    // Owner can transfer ether to their address
+     function withdraw() public payable onlyOwner {
+        // Get stored ether
+        uint256 amount = address(this).balance;
+        require(amount > 0, "No funds to withdraw");
+
+        // Send ether to owner
+        (bool sent,) = payable(owner).call{value: amount}("");
+        require(sent, "Failed to send Ether"); 
     }
 }
