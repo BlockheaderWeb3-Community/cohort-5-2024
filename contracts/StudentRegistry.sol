@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.14;
 
 contract StudentRegistry {
     //custom data type
@@ -82,7 +82,6 @@ contract StudentRegistry {
         });
 
         studentsMapping[_studentAddr] = student;
-
     }
 
      // this function updates the student register (in the array method)
