@@ -8,19 +8,23 @@ contract MyStudentRegistry is Ownable {
 
     address private StudentRegistryContractAddress;
 
-    constructor(address _studentRgistry){
-        StudentRegistryContractAddress = _studentRgistry;
+    constructor(address _studentRegistry){
+        StudentRegistryContractAddress = _studentRegistry;
     }
 
     function registerStudent(
         address _studentAddr,
         string memory _name,
         uint8 _age
-    ) public onlyOwner {
+    ) public payable {
 
-        IStudentRegistry(StudentRegistryContractAddress).addStudent(_studentAddr, _name, _age);
+        require(msg.value == 1 ether, "You need to send exactly 1 ether to register");
+        IStudentRegistry(StudentRegistryContractAddress).addStudent{value: msg.value}(_studentAddr, _name, _age, msg.value);
     }
 
+    function confirmAllStudents() public payable { 
+        IStudentRegistry(StudentRegistryContractAddress).confirmAllStudents();
+    } 
 
     function getStudent2(
         uint8 _studentId
