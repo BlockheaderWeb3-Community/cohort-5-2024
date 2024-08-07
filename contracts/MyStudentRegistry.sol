@@ -12,13 +12,13 @@ contract MyStudentRegistry is Ownable {
         StudentRegistryContractAddress = _studentRgistry;
     }
 
-    function registerStudent(
+    function authorizeRegisteredStudent(
         address _studentAddr,
         string memory _name,
         uint8 _age
-    ) public onlyOwner {
+    ) public payable  {
 
-        IStudentRegistry(StudentRegistryContractAddress).addStudent(_studentAddr, _name, _age);
+        IStudentRegistry(StudentRegistryContractAddress).authorizeStudentRegistration(address _studentAddr)  public onlyOwner;
     }
 
 
@@ -29,3 +29,5 @@ contract MyStudentRegistry is Ownable {
         return IStudentRegistry(StudentRegistryContractAddress).getStudent(_studentId);
     }
 }
+
+
