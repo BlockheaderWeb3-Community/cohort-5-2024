@@ -2,31 +2,31 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 
-contract Ownable {
+contract Ownable{
 
-    address private owner;
+    address payable internal owner;
 
-    event ChangeOwner(address indexed oldOwner, address indexed  newOwner);
+    event ChangeOwner(address indexed oldOwner, address indexed newOwner);
 
-    constructor(){
-        owner = msg.sender;
+    constructor() payable {
+        owner = payable(msg.sender);
     }
 
 
-    modifier  onlyOwner {
+    modifier onlyOwner(){
         require(owner == msg.sender, "Caller not owner");
         _;
     }
+    
 
-
-    function getOwner() public  view returns (address){
+    function getOwner() public view returns (address) {
         return owner;
     }
 
 
-    function changeOwner(address _newOwner) internal onlyOwner {
-        require(_newOwner != address(0), "Owner can not be address zero");
-        
+    function changeOwner(address payable _newOwner) internal onlyOwner {
+        require(_newOwner != address(0), "Owner cannot be address zero");
+
         emit ChangeOwner(owner, _newOwner);
         owner = _newOwner;
     }
