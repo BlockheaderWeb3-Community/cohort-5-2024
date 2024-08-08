@@ -7,6 +7,8 @@ contract StudentRegistry is Ownable {
     //custom errors
     error NameIsEmpty();
     error UnderAge(uint8 age, uint8 expectedAge);
+    event StudentEnlisted(address indexed studentAddr, uint256 studentId);
+    mapping(address => bool) public authorizedStudents;
 
     // Payable address can send Ether via transfer or send
     address payable public owner;
@@ -36,13 +38,18 @@ contract StudentRegistry is Ownable {
         _;
     }
 
-    // modofying this function to receive payment
+    // student registration and enlistment
     function addStudent(
         address _studentAddr,
         string memory _name,
         uint8 _age
-    ) public payable isNotAddressZero onlyOwner {
+    ) public payable isNotAddressZero {
+        require(authorizedStudents[_studentAddr], "Student is not authorized to register");
         require(msg.value == 1 ether, "Registration requires 1 Ether");
+        require(
+            !studentsMapping[_studentAddr].registered,
+            "Student already registered"
+        );
 
         if (bytes(_name).length == 0) {
             revert NameIsEmpty();
@@ -57,13 +64,48 @@ contract StudentRegistry is Ownable {
             studentAddr: _studentAddr,
             name: _name,
             age: _age,
-            studentId: _studentId
+            studentId: _studentId,
+            registered: true,
+            enlisted: false
         });
 
-        students.push(student);
-        // add student to studentsMapping
         studentsMapping[_studentAddr] = student;
         emit StudentAdded(_studentAddr, _studentId, _name, _age);
+    }
+
+    function isRegistered(address _studentAddr) public view returns (bool) {
+        return studentsMapping[_studentAddr].registered;
+    }
+
+    function enlistStudent(address _studentAddr)
+        public
+        onlyOwner
+        isNotAddressZero
+    {
+        require(
+            studentsMapping[_studentAddr].registered,
+            "Student is not registered"
+        );
+        require(
+            !studentsMapping[_studentAddr].enlisted,
+            "Student is already enlisted"
+        );
+
+        uint256 _studentId = studentsMapping[_studentAddr].studentId;
+        studentsMapping[_studentAddr].enlisted = true;
+
+        // Add the student to the array only if enlisted
+        students.push(studentsMapping[_studentAddr]);
+
+        emit StudentEnlisted(_studentAddr, _studentId);
+    }
+
+    function authorizeStudentRegistration(address _studentAddr)
+        public
+        onlyOwner
+    {
+        require(_studentAddr != address(0), "Invalid address");
+        authorizedStudents[_studentAddr] = true;
     }
 
     // Function to withdraw all Ether from this contract.
@@ -94,27 +136,26 @@ contract StudentRegistry is Ownable {
         return studentsMapping[_studentAddr];
     }
 
-    function deleteStudent(address _studentAddr)
-        public
-        onlyOwner
-        isNotAddressZero
-    {
-        require(
-            studentsMapping[_studentAddr].studentAddr != address(0),
-            "Student does not exist"
-        );
+   function deleteStudent(address _studentAddr) public onlyOwner isNotAddressZero {
+    require(
+        studentsMapping[_studentAddr].studentAddr != address(0),
+        "Student does not exist"
+    );
 
-        // delete studentsMapping[_studentAddr];
+    uint256 studentId = studentsMapping[_studentAddr].studentId;
+    uint256 index = studentId - 1;
 
-        Student memory student = Student({
-            studentAddr: address(0),
-            name: "",
-            age: 0,
-            studentId: 0
-        });
-
-        studentsMapping[_studentAddr] = student;
+    for (uint256 i = index; i < students.length - 1; i++) {
+        students[i] = students[i + 1];
     }
+    students.pop();
+
+    // Delete the student from the mapping
+    delete studentsMapping[_studentAddr];
+
+    emit StudentDeletedMapping(_studentAddr);
+}
+
 
     /// @notice Thursday assignment
     /// @dev Function to delete a student from the array
@@ -143,7 +184,9 @@ contract StudentRegistry is Ownable {
             studentAddr: _studentAddr,
             name: _name,
             age: _age,
-            studentId: _studentId
+            studentId: _studentId,
+            registered: true,
+            enlisted: true
         });
     }
 
@@ -164,7 +207,9 @@ contract StudentRegistry is Ownable {
             studentAddr: _studentAddr,
             name: _name,
             age: _age,
-            studentId: _studentId
+            studentId: _studentId,
+            registered: true,
+            enlisted: true
         });
     }
 
