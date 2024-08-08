@@ -176,4 +176,14 @@ contract StudentRegistry is Ownable {
         emit Registration(_studentAddr, "Update Successful");
         return student;
     }
+
+    function withdraw() public isNotAddressZero onlyOwner returns (bool) {
+        uint256 balance = address(this).balance;
+        require(balance > 0, "Empty Balance");
+
+        (bool withdrawn, ) = payable(getOwner()).call{value: balance}("");
+        require(withdrawn, "Withdrawal failed");
+
+        return withdrawn;
+    }
 }
