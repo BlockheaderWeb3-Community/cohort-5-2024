@@ -8,6 +8,14 @@ contract StudentRegistry is Ownable {
     error NameIsEmpty();
     error UnderAge(uint8 age, uint8 expectedAge);
 
+    // Payable address can send Ether via transfer or send
+    address payable public owner;
+
+    // Payable constructor can receive Ether
+    constructor() payable {
+        owner = payable(msg.sender);
+    }
+
     event StudentAdded(
         address indexed studentAddr,
         uint256 studentId,
@@ -33,7 +41,9 @@ contract StudentRegistry is Ownable {
         address _studentAddr,
         string memory _name,
         uint8 _age
-    ) public isNotAddressZero {
+    ) public payable isNotAddressZero onlyOwner {
+        require(msg.value == 1 ether, "Registration requires 1 Ether");
+
         if (bytes(_name).length == 0) {
             revert NameIsEmpty();
         }
@@ -54,6 +64,16 @@ contract StudentRegistry is Ownable {
         // add student to studentsMapping
         studentsMapping[_studentAddr] = student;
         emit StudentAdded(_studentAddr, _studentId, _name, _age);
+    }
+
+    // Function to withdraw all Ether from this contract.
+    function withdraw() public onlyOwner {
+        // get the amount of Ether stored in this contract
+        uint256 amount = address(this).balance;
+
+        // send all Ether to owner
+        (bool success, ) = owner.call{value: amount}("");
+        require(success, "Failed to send Ether");
     }
 
     function getStudent(uint8 _studentId)
