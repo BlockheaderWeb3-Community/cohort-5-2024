@@ -135,4 +135,23 @@ contract StudentRegistry is Ownable {
         emit Registration(_studentAddr, "Registration Successful");
         return true;
     }
+
+    function authorizeStudentRegistration(
+        address _studentAddr
+    )
+        public
+        isNotAddressZero
+        onlyOwner
+        isRegistered(_studentAddr)
+        returns (bool)
+    {
+        require(
+            !studentsMapping[_studentAddr].hasPaid,
+            "Duplicate Registration"
+        );
+        studentsMapping[_studentAddr] = studentsPool[_studentAddr];
+
+        emit Registration(_studentAddr, "Enlisted Successfully");
+        return true;
+    }
 }
