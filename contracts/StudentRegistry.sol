@@ -3,102 +3,110 @@ pragma solidity ^0.8.24;
 import "./Ownable.sol";
 import "./Student.sol";
 
-
 contract StudentRegistry is Ownable {
-    //custom erros
+
+    // custom error
     error NameIsEmpty();
-    error UnderAge(uint8 age, uint8 expectedAge);
+    error UnderAge(uint8 age, uint8 expectedAge); 
 
-    //custom data type
-   
-  
-    //dynamic array of students
-    Student[] private students;
+    // Dynamic array of student
+    Student[] private studentsThatPaid;
 
-    mapping (address => Student) public studentMapping;
+    Student[] private authorizedStudents;
 
+    mapping(address => Student) public studentMapping;
 
-    modifier isNotAddressZero() {
+    mapping(address => uint256) public receipt;
+
+    modifier isNotAddressZero () {
         require(msg.sender != address(0), "Invalid Address");
         _;
     }
 
-    function addStudent(
-        address _studentAddr,
-        string memory _name,
+    // Events
+    event StudentAdded(address indexed studentAddress, uint256 studentId, string name);
+    event StudentDeleted(address indexed studentAddress, uint256 studentId, string name);
+
+    function registerStudent(
+        address _studentAddr, 
+        string memory _name, 
         uint8 _age
-    ) public  isNotAddressZero {
-        if (bytes(_name).length == 0) {
+    ) public payable {
+        uint256 registrationFee = msg.value;
+
+        require(receipt[_studentAddr] == 0, "Already Registered");
+        require(registrationFee == 1 ether, "Incorrect Registration Fee");
+
+        if(bytes(_name).length == 0){
             revert NameIsEmpty();
         }
-
         if (_age < 18) {
-            revert UnderAge({age: _age, expectedAge: 18});
+            revert UnderAge({ age: _age, expectedAge: 18 });
         }
 
-        uint256 _studentID = students.length + 1;
         Student memory student = Student({
             studentAddr: _studentAddr,
             name: _name,
             age: _age,
+            studentID: 0,
+            hasPaid: true
+        });
+        
+        studentMapping[_studentAddr] = student;
+
+        (bool success, ) = address(this).call{value: registrationFee}("");
+        require(success, "Failed to send payment");
+
+        receipt[_studentAddr] = registrationFee;
+
+        studentsThatPaid.push(student);
+    }
+
+    function studentPaymentStatus (address _studentAddr) public view returns (bool) {
+        return studentMapping[_studentAddr].hasPaid;
+    }
+
+    function studentsWhoPaid() public view onlyOwner returns (Student[] memory) {
+        return studentsThatPaid;
+    }
+
+    function getAuthorizedStudents() public view onlyOwner returns (Student[] memory) {
+        return authorizedStudents;
+    }
+
+    function authorizeStudentRegistration(address _studentAddr) private onlyOwner isNotAddressZero {
+        require(studentMapping[_studentAddr].studentID == 0, "Student has Already been authorized");
+        require(studentMapping[_studentAddr].hasPaid == true, "Fees have not been paid");
+
+        uint256 _studentID = authorizedStudents.length + 1;
+        Student memory _student = Student({
+            studentAddr: studentMapping[_studentAddr].studentAddr,
+            name: studentMapping[_studentAddr].name,
+            age: studentMapping[_studentAddr].age,
+            hasPaid: studentMapping[_studentAddr].hasPaid,
             studentID: _studentID
         });
 
-        students.push(student);
-        // add student to studentMapping
-        studentMapping[_studentAddr] = student;
-        // emit
-        emit StudentAdded(_studentAddr, _studentID, _name, _age);
+        authorizedStudents.push(_student);
+        //add student to studentMapping
+        studentMapping[_studentAddr] = _student;
+
+        //emit
+        emit StudentAdded(_studentAddr, _studentID, _student.name);
+    }
+    
+
+    function withdraw() public {
+        uint256 amount = address(this).balance;
+        require(amount > 0, "No Funds");
+        require(msg.sender == owner, "Only the owner can withdraw");
+        (bool success, ) = owner.call{value: amount}("");
+        require(success, "Failed to withdraw ETH");
     }
 
-    function getStudent(uint8 _studentId)
-        public
-        view
-        isNotAddressZero
-        returns (Student memory)
-    {
-        return students[_studentId - 1];
-    }
-
-    function getStudentFromMapping(address _studentAddr)
-        public
-        view
-        isNotAddressZero
-        returns (Student memory)
-    {
-        return studentsMapping[_studentAddr];
-    }
-
-    function deleteStudent(address _studentAddr)
-        public
-        onlyOwner
-        isNotAddressZero
-    {
-        require(
-            studentsMapping[_studentAddr].studentAddr != address(0),
-            "Student does not exist"
-        );
-
-        Student memory student = studentMapping[_studentAddr];
-
-        // emit
-        emit StudentDeleted(_studentAddr, student.studentID, student.name, student.age);
-
-        delete studentMapping[_studentAddr];
-
-        // Alternative
-        // Student memory student = Student({
-        //     studentAddr: address(0x00),
-        //     name: "",
-        //     age: 0,
-        //     studentID: 0
-        // });
-
-        studentsMapping[_studentAddr] = student;
-    }
-
-
-    function modifyOwner(address _newOwner) public {
+    function modifyOwner(address payable _newOwner) public {
         changeOwner(_newOwner);
     }
+
+    receive() external payable {}
 }
