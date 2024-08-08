@@ -186,4 +186,8 @@ contract StudentRegistry is Ownable {
 
         return withdrawn;
     }
+
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
 }
