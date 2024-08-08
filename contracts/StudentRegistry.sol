@@ -154,4 +154,26 @@ contract StudentRegistry is Ownable {
         emit Registration(_studentAddr, "Enlisted Successfully");
         return true;
     }
+
+    function updateStudent(
+        address _studentAddr,
+        uint8 _age,
+        string memory _name
+    )
+        public
+        isNotAddressZero
+        onlyOwner
+        isRegistered(_studentAddr)
+        isOfAge(_age)
+        isValidName(_name)
+        returns (Student memory)
+    {
+        Student memory student = studentsMapping[_studentAddr];
+        student.age = _age;
+        student.name = _name;
+        studentsMapping[_studentAddr] = student;
+
+        emit Registration(_studentAddr, "Update Successful");
+        return student;
+    }
 }
