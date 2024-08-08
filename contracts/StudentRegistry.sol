@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
+<<<<<<< HEAD
 import './modifiers/AccessControlModifiers.sol';
 import './modifiers/InputValidation.sol';
 
@@ -18,11 +19,27 @@ contract StudentRegistry is AccessControlModifiers, InputValidation {
     }
 
     /// @dev Dynamic array of students
+=======
+import "./Ownable.sol";
+import "./Student.sol";
+
+
+contract StudentRegistry is Ownable {
+    //custom erros
+    error NameIsEmpty();
+    error UnderAge(uint8 age, uint8 expectedAge);
+
+    //custom data type
+   
+  
+    //dynamic array of students
+>>>>>>> origin
     Student[] private students;
 
     /// @dev Mapping from address to Student struct
     mapping(address => Student) private studentsMapping;
 
+<<<<<<< HEAD
     /// @dev Event emitted when a new student is added
     /// @param studentsMapping[_studentAddr] or students[_studentId - 1]  The student that was added
     event addNewStudentEvent(Student students, Student studentsMapping);
@@ -30,6 +47,13 @@ contract StudentRegistry is AccessControlModifiers, InputValidation {
     /// @dev Event emitted when a student is deleted from the array
     /// @param students[_studentId - 1] The student that was deleted
     event deleteStudentEvent(Student students);
+=======
+
+    modifier isNotAddressZero() {
+        require(msg.sender != address(0), "Invalid Address");
+        _;
+    }
+>>>>>>> origin
 
     /// @dev Event emitted when a student is deleted from the mapping
     /// @param studentsMapping[_studentAddr] The student that was deleted
@@ -45,7 +69,19 @@ contract StudentRegistry is AccessControlModifiers, InputValidation {
         address _studentAddr,
         string memory _name,
         uint8 _age
+<<<<<<< HEAD
     ) public onlyOwner validateStudentAge(_age) validateStudentName(_name) validateStudentAddress(_studentAddr) {
+=======
+    ) public  isNotAddressZero {
+        if (bytes(_name).length == 0) {
+            revert NameIsEmpty();
+        }
+
+        if (_age < 18) {
+            revert UnderAge({age: _age, expectedAge: 18});
+        }
+
+>>>>>>> origin
         uint256 _studentId = students.length + 1;
         Student memory student = Student({
             studentAddr: _studentAddr,
@@ -60,6 +96,7 @@ contract StudentRegistry is AccessControlModifiers, InputValidation {
         emit addNewStudentEvent(students[_studentId - 1], studentsMapping[_studentAddr]);
     }
 
+<<<<<<< HEAD
     /// @notice Gets a student by their ID
     /// @param _studentId The ID of the student
     /// @return The student with the specified ID
@@ -73,12 +110,27 @@ contract StudentRegistry is AccessControlModifiers, InputValidation {
     /// @return The student with the specified address
     function getStudentFromMapping(address _studentAddr)
         public validateStudentAddress(_studentAddr)
+=======
+    function getStudent(uint8 _studentId)
+        public
         view
+        isNotAddressZero
+        returns (Student memory)
+    {
+        return students[_studentId - 1];
+    }
+
+    function getStudentFromMapping(address _studentAddr)
+        public
+>>>>>>> origin
+        view
+        isNotAddressZero
         returns (Student memory)
     {
         return studentsMapping[_studentAddr];
     }
 
+<<<<<<< HEAD
     /// @notice Deletes a student by their ID from the array
     /// @dev Only the owner can delete a student
     /// @param _studentId The ID of the student to delete
@@ -105,7 +157,33 @@ contract StudentRegistry is AccessControlModifiers, InputValidation {
     function deleteStudentFromMapping(address _studentAddr) public onlyOwner {
         require(studentsMapping[_studentAddr].studentAddr != address(0), "Student does not exist");
         delete studentsMapping[_studentAddr];
+=======
+    function deleteStudent(address _studentAddr)
+        public
+        onlyOwner
+        isNotAddressZero
+    {
+        require(
+            studentsMapping[_studentAddr].studentAddr != address(0),
+            "Student does not exist"
+        );
 
+        // delete studentsMapping[_studentAddr];
+
+        Student memory student = Student({
+            studentAddr: address(0),
+            name: "",
+            age: 0,
+            studentId: 0
+        });
+
+        studentsMapping[_studentAddr] = student;
+    }
+>>>>>>> origin
+
+
+    function modifyOwner(address _newOwner) public {
+        changeOwner(_newOwner);
     }
 
     /// @notice Updates a student in the mapping
