@@ -1,145 +1,31 @@
 // SPDX-License-Identifier: MIT
-// pragma solidity ^0.8.24;
-
-// contract StudentRegistry {
-//     //custom data type
-//     struct Student {
-//         address studentAddr;
-//         string name;
-//         uint256 studentId;
-//         uint8 age;
-//     }
-
-//     address public owner;
-
-//     constructor() {
-//         owner = msg.sender;
-//     }
-
-//     //dynamic array of students
-//     Student[] private students;
-
-//     mapping(address => Student) public studentsMapping;
-
-//     modifier onlyOwner () {
-//         require( owner == msg.sender, "You fraud!!!");
-//         _;
-//     }
-
-//     modifier isNotAddressZero () {
-//         require(msg.sender != address(0), "Invalid Address");
-//         _;
-//     }
-
-//     function addStudent(
-//         address _studentAddr,
-//         string memory _name,
-//         uint8 _age
-//     ) public onlyOwner isNotAddressZero {
-
-//         require( bytes(_name).length > 0, "Name cannot be blank");
-//         require( _age >= 18, "This student is under age");
-
-//         uint256 _studentId = students.length + 1;
-//         Student memory student = Student({
-//             studentAddr: _studentAddr,
-//             name: _name,
-//             age: _age,
-//             studentId: _studentId
-//         });
-
-//         students.push(student);
-//         // add student to studentsMapping
-//         studentsMapping[_studentAddr] = student;
-//     }
-
-//     function getStudent(uint8 _studentId) public isNotAddressZero view returns (Student memory) {
-//         return students[_studentId - 1];
-//     }
-
-
-
-//     function getStudentFromMapping(address _studentAddr)
-//         public
-//         isNotAddressZero
-//         view
-//         returns (Student memory)
-//     {
-//         return studentsMapping[_studentAddr];
-//     }
-
-
-
-//     function deleteStudent(address _studentAddr) public onlyOwner  isNotAddressZero{
-
-//         require(studentsMapping[_studentAddr].studentAddr != address(0), "Student does not exist");
-
-//         // delete studentsMapping[_studentAddr];
-
-//         Student memory student = Student({
-//             studentAddr: address(0),
-//             name: "",
-//             age: 0,
-//             studentId: 0
-//         });
-
-//         studentsMapping[_studentAddr] = student;
-
-//     }
-// }
-// `
-
-
-
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
+import "./Ownable.sol";
+import "./Student.sol";
+import "contracts/StudentCount.sol";
 
-contract StudentRegistry {
-    struct Student {
-        address studentAddr;
-        string name;
-        uint8 age;
-        uint256 studentId;
-    }
+contract StudentRegistry is Ownable, StudentCount {
+    event PaymentStatus(bool indexed havePaid, string message);
+    event StudentUpdate(bool indexed updated, string message);
 
-    address public owner;
+    mapping(address => Student) private studentsMapping;
 
-    constructor() {
-        owner = msg.sender;
-    }
+    mapping(address => uint) public studentUId;
 
-    Student[] private students;
+    mapping(address => uint) public receipt;
 
-    mapping(address => Student) public studentMap;
-
-    modifier onlyOwner() {
-        require(owner == msg.sender, "you're not authorized");
-        _;
-    }
-
-    modifier isNotAddressZero() {
-        require(msg.sender != address(0), "Invalid Address");
-        _;
-    }
-
-    event StudentAdded(
-        address indexed studentAddr,
-        string name,
-        uint8 age,
-        uint256 studentId
-    );
-    event StudentDeleted(address indexed studentAddr);
-
-    /// @dev function to add student to the students array and mapping
-    /// @notice adds student
-    function addStudent(
+    function registerStudents(
         address _studentAddr,
         string memory _name,
-        uint8 _age
-    ) public onlyOwner isNotAddressZero {
-        require(bytes(_name).length > 0, "input cannot be empty");
-        require(_age >= 18, "You are not up to age");
-        uint256 _studentId = students.length + 1;
+        uint8 _age,
+        uint256 _studentId
+    ) public payable isNotAddressZero onlyOwner nameIsNotEmpty(_name) upToAge(_age) {
+        uint amount = msg.value;
+        uint hasUserPaid = receipt[_studentAddr];
+
+        require(hasUserPaid == 0 ether, "You have registered");
+        require(amount == 1 ether, "You must pay exactly 1 ether to proceed");
+
         Student memory student = Student({
             studentAddr: _studentAddr,
             name: _name,
@@ -147,61 +33,57 @@ contract StudentRegistry {
             studentId: _studentId
         });
 
-        students.push(student);
-        studentMap[_studentAddr] = student;
-
-        emit StudentAdded(_studentAddr, _name, _age, _studentId);
+        // add student to studentsMapping
+        studentsMapping[_studentAddr] = student;
+        receipt[_studentAddr] = amount;
+        emit PaymentStatus(true, "you have succesfully registered");
     }
 
-    /// @dev function to get student using studentId
-    /// @notice gets student ID
-    function getStudent(uint256 _studentId)
+    function authorizeStudent(address _studentAddr) public {
+       require(receipt[_studentAddr] == 1 ether, "Go and register to proceed");
+
+       Student storage studentsDetails = studentsMapping[_studentAddr];
+
+       studentsDetails.studentAddr = _studentAddr;
+       studentsDetails.studentId = getStudentMainId();
+       incrementStudentId();
+
+       studentUId[_studentAddr] = studentId;
+
+    }
+
+    function updateStudent(address _studentAddr, string memory _name, uint8 _age) public  isNotAddressZero onlyOwner nameIsNotEmpty(_name) upToAge(_age) returns (Student memory) {
+        Student storage studentsUpdate = studentsMapping[_studentAddr];
+        studentsUpdate.name = _name;
+        studentsUpdate.age = _age;
+
+        studentsMapping[_studentAddr] = studentsUpdate;
+        emit StudentUpdate(true, "Successfully Updated");
+
+        return studentsUpdate;
+
+    }
+
+    function getStudentFromMapping(address _studentAddr)
         public
         view
-        onlyOwner
         isNotAddressZero
         returns (Student memory)
     {
-        return students[_studentId - 1];
+        return studentsMapping[_studentAddr];
     }
 
-    /// @dev function to get student using studentAddr
-    /// @notice gets student Address
-    function getStudentAddr(address _ownerAddr)
-        public
-        view
-        onlyOwner
-        isNotAddressZero
-        returns (Student memory)
-    {
-        return studentMap[_ownerAddr];
-    }
-
-    function updateStudent(
-        address _studentAddr,
-        string memory _name,
-        uint8 _age,
-        uint256 _studentId
-    ) public onlyOwner isNotAddressZero {
-        Student storage studentToUpdate = studentMap[_studentAddr];
-        studentToUpdate.name = _name;
-        studentToUpdate.age = _age;
-        studentToUpdate.studentId = _studentId;
-    }
-
-    /// @dev function to delete using address
-    /// @notice resets it back to the initial state
     function deleteStudent(address _studentAddr)
         public
         onlyOwner
         isNotAddressZero
     {
         require(
-            studentMap[_studentAddr].studentAddr != address(0),
-            "student not available"
+            studentsMapping[_studentAddr].studentAddr != address(0),
+            "Student does not exist"
         );
 
-        // delete studentMap[_studentAddr];
+        // delete studentsMapping[_studentAddr];
 
         Student memory student = Student({
             studentAddr: address(0),
@@ -210,22 +92,34 @@ contract StudentRegistry {
             studentId: 0
         });
 
-        studentMap[_studentAddr] = student;
-
-        emit StudentDeleted(_studentAddr);
+        studentsMapping[_studentAddr] = student;
     }
 
-    /// @dev function to delete using Uint
-    /// @notice resets it back to the initial state
-    function deleteStudentUint(uint256 _student)
-        public
-        onlyOwner
-        isNotAddressZero
-    {
-        require(_student > 0, "student not available or does not exist");
 
-        delete students[_student - 1];
-
-        emit StudentDeleted(students[_student - 1].studentAddr);
+    function modifyOwner(address _newOwner) public {
+        changeOwner(_newOwner);
     }
+
+    /**
+        @notice Withdraws the contract's balance to the owner's address.
+    */
+    function withdraw() public isNotAddressZero onlyOwner {
+        uint256 balance = address(this).balance;
+        require(balance > 0, "Empty Balance");
+
+        (bool success, ) = getOwner().call{value: balance}("");
+        require(success, "your Withdrawal was unsucessful");
+    }
+
+
+    /**
+        @notice Returns the balance of the contract.
+        @return balance The current balance of the contract.
+    */
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    receive() external payable { }
+    
 }
