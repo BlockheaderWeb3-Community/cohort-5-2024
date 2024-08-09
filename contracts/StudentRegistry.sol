@@ -27,8 +27,6 @@ contract StudentRegistry is Ownable {
     */
     event Registration(address indexed _studentAddress, string _message);
 
-    //custom data type
-
     /**
         @notice These are the state variables of this contract.
         @dev students array is deprecated.
@@ -122,40 +120,6 @@ contract StudentRegistry is Ownable {
     }
 
     /**
-        @notice Retrieves the student details by student address.
-        @param _studentAddr The address of the student.
-        @return student The Student associated with the address.
-    */
-    function getStudentFromMapping(
-        address _studentAddr
-    ) public view isNotAddressZero returns (Student memory) {
-        return studentsMapping[_studentAddr];
-    }
-
-    /**
-        @notice Deletes a student from the registry.
-        @param _studentAddr The address of the student to delete.
-    */
-    function deleteStudent(
-        address _studentAddr
-    ) public onlyOwner isNotAddressZero isRegistered(_studentAddr) {
-        // delete studentsMapping[_studentAddr];
-
-        Student memory student;
-        studentsMapping[_studentAddr] = student;
-
-        emit Registration(_studentAddr, "Expulsion Successful");
-    }
-
-    /**
-        @notice Transfers ownership of the contract to a new owner.
-        @param _newOwner The address of the new owner.
-    */
-    function modifyOwner(address payable _newOwner) public {
-        changeOwner(_newOwner);
-    }
-
-    /**
         @notice Registers a student with the provided details and confirms registration fees payment.
         @dev The function prevents duplicate registration, and that the correct registration fee is paid.
         @param _studentAddr The unique address of the student.
@@ -244,6 +208,40 @@ contract StudentRegistry is Ownable {
 
         emit Registration(_studentAddr, "Update Successful");
         return student;
+    }
+
+    /**
+        @notice Retrieves the student details by student address.
+        @param _studentAddr The address of the student.
+        @return student The Student associated with the address.
+    */
+    function getStudentFromMapping(
+        address _studentAddr
+    ) public view isNotAddressZero returns (Student memory) {
+        return studentsMapping[_studentAddr];
+    }
+
+    /**
+        @notice Deletes a student from the registry.
+        @param _studentAddr The address of the student to delete.
+    */
+    function deleteStudent(
+        address _studentAddr
+    ) public onlyOwner isNotAddressZero isRegistered(_studentAddr) {
+        // delete studentsMapping[_studentAddr];
+
+        Student memory student;
+        studentsMapping[_studentAddr] = student;
+
+        emit Registration(_studentAddr, "Expulsion Successful");
+    }
+
+    /**
+        @notice Transfers ownership of the contract to a new owner.
+        @param _newOwner The address of the new owner.
+    */
+    function modifyOwner(address payable _newOwner) public {
+        changeOwner(_newOwner);
     }
 
     /**
