@@ -1,96 +1,86 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-import "./Ownable.sol";
-import "./Student.sol";
 
-
+import "contracts/modifiers/Ownable.sol";
+import "./IStudentRegistry.sol";
+/**
+ * @title MyStudentRegistry
+ * @dev This contract acts as a proxy to interact with another StudentRegistry contract.
+ * It forwards calls to the `StudentRegistry` contract for student management functions.
+ */
 contract StudentRegistry is Ownable {
-    //custom erros
-    error NameIsEmpty();
-    error UnderAge(uint8 age, uint8 expectedAge);
+    address public studentsContractAddress;
 
-    //custom data type
-   
-  
-    //dynamic array of students
-    Student[] private students;
-
-    mapping(address => Student) public studentsMapping;
-
-
-    modifier isNotAddressZero() {
-        require(msg.sender != address(0), "Invalid Address");
-        _;
+    /**
+     * @dev Set the address of the Students contract.
+     * @param _studentsContractAddr The address of the Student contract.
+     */
+    constructor(address _studentsContractAddr) {
+        studentsContractAddress = _studentsContractAddr;
     }
 
-    function addStudent(
-        address _studentAddr,
-        string memory _name,
+    /**
+     * @dev Register a student.
+     * @param _studentAddress The address of the student to register.
+     * @param _name The name of the student.
+     * @param _age The age of the student.
+     */
+    function addStudents(address _studentAddress, string memory _name, uint8 _age) public  {
+        IStudentRegistry(studentsContractAddress).addStudent(_studentAddress, _name, _age);
+    }
+
+    /**
+     * @dev Retrieve a student record.
+     * @param _studentAddr The address of the student to retrieve.
+     */
+    function getStudents(address _studentAddr) public view returns (Student memory) {
+        return IStudentRegistry(studentsContractAddress).getStudent(_studentAddr);
+    }
+
+    /**
+     * @dev Update a student record.
+     * @param _studentAddr The new address of the student.
+     * @param _name The new name of the student.
+     * @param _age The new age of the student.
+     */
+    function updateStudents(
+        address _studentAddr, 
+        string memory _name, 
         uint8 _age
-    ) public  isNotAddressZero {
-        if (bytes(_name).length == 0) {
-            revert NameIsEmpty();
-        }
-
-        if (_age < 18) {
-            revert UnderAge({age: _age, expectedAge: 18});
-        }
-
-        uint256 _studentId = students.length + 1;
-        Student memory student = Student({
-            studentAddr: _studentAddr,
-            name: _name,
-            age: _age,
-            studentId: _studentId
-        });
-
-        students.push(student);
-        // add student to studentsMapping
-        studentsMapping[_studentAddr] = student;
-    }
-
-    function getStudent(uint8 _studentId)
-        public
-        view
-        isNotAddressZero
-        returns (Student memory)
-    {
-        return students[_studentId - 1];
-    }
-
-    function getStudentFromMapping(address _studentAddr)
-        public
-        view
-        isNotAddressZero
-        returns (Student memory)
-    {
-        return studentsMapping[_studentAddr];
-    }
-
-    function deleteStudent(address _studentAddr)
-        public
-        onlyOwner
-        isNotAddressZero
-    {
-        require(
-            studentsMapping[_studentAddr].studentAddr != address(0),
-            "Student does not exist"
-        );
-
-        // delete studentsMapping[_studentAddr];
-
-        Student memory student = Student({
-            studentAddr: address(0),
-            name: "",
-            age: 0,
-            studentId: 0
-        });
-
-        studentsMapping[_studentAddr] = student;
+    ) public {
+        IStudentRegistry(studentsContractAddress).updateStudent(_studentAddr, _name, _age);
     }
 
 
-    function modifyOwner(address _newOwner) public {
-        changeOwner(_newOwner);
+     /**
+     * @dev Delete a student record.
+     * @param _studentAddr The address of the student to delete.
+     * @notice  only owner can delete a student
+     */
+    function removeStudent(address _studentAddr) public {
+        IStudentRegistry(studentsContractAddress).deleteStudent(_studentAddr);
     }
+
+
+    /**
+        @notice Pay Fees.
+        @dev This function calls the payFees function in the external contract..
+    */
+    function payFees() public payable  {
+        return IStudentRegistry(studentsContractAddress).payFees{value: msg.value}();
+    }
+
+        /**
+        @notice Withdraws the contract's balance from the external Student Registry contract.
+        @dev This function calls the withdraw function in the external contract.
+        @return success A boolean value indicating whether the withdrawal was successful.
+    */
+    function withdrawEarnings() public returns (bool) {
+        return IStudentRegistry(studentsContractAddress).withdrawEarnings();
+    }
+
+    /**
+     * @dev Allow the contract to receive Ether.
+     */
+    receive() external payable { }
 }
