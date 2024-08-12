@@ -8,12 +8,14 @@ contract ERC20 is IERC20 {
     event Approval(
         address indexed owner, address indexed spender, uint256 value
     );
-
+    
+    address internal owner;
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
     string public name;
     string public symbol;
+    uint8 public decimals;
 
     constructor(string memory _name, string memory _symbol, uint8 _decimals) {
         name = _name;
@@ -21,18 +23,26 @@ contract ERC20 is IERC20 {
         decimals = _decimals;
     }
 
+    modifier onlyOwner {
+    require(owner == msg.sender, "Caller not owner");
+    _;
+    }
+
+
     function transfer(address recipient, uint256 amount)
         external
         returns (bool)
     {
+        require(recipient != address(0), "Invalid address");
+        require(balanceOf[msg.sender] > 0, "insufficient funds");
         balanceOf[msg.sender] -= amount;
         balanceOf[recipient] += amount;
         emit Transfer(msg.sender, recipient, amount);
-
         return true;
     }
 
     function approve(address spender, uint256 amount) external returns (bool) {
+    require(spender != address(0), "Invalid address");
         allowance[msg.sender][spender] = amount;
         emit Approval(msg.sender, spender, amount);
         return true;
@@ -42,7 +52,8 @@ contract ERC20 is IERC20 {
         external
         returns (bool)
     {
-        require(msg.sender != recipient, "cannot transfer to self");
+        require(msg.sender != recipient, "can not transfer");
+        require(balanceOf[sender] > 0, "No enough funds");
         allowance[sender][msg.sender] -= amount;
         balanceOf[sender] -= amount;
         balanceOf[recipient] += amount;
@@ -51,6 +62,8 @@ contract ERC20 is IERC20 {
     }
 
     function _mint(address to, uint256 amount) internal {
+        require(to == owner);
+
         balanceOf[to] += amount;
         totalSupply += amount;
         emit Transfer(address(0), to, amount);
@@ -62,11 +75,11 @@ contract ERC20 is IERC20 {
         emit Transfer(from, address(0), amount);
     }
 
-    function mint(address to, uint256 amount) external {
+    function mint(address to, uint256 amount) external onlyOwner {
         _mint(to, amount);
     }
 
-    function burn(address from, uint256 amount) external {
+    function burn(address from, uint256 amount) external onlyOwner{
         _burn(from, amount);
     }
 }
