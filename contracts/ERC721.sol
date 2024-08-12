@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+
+
+// interface for IERC165
 interface IERC165 {
     function supportsInterface(bytes4 interfaceID)
         external
@@ -8,6 +11,7 @@ interface IERC165 {
         returns (bool);
 }
 
+// interface for IERC721 inheriting IERC165
 interface IERC721 is IERC165 {
     function balanceOf(address owner) external view returns (uint256 balance);
     function ownerOf(uint256 tokenId) external view returns (address owner);
@@ -32,6 +36,8 @@ interface IERC721 is IERC165 {
         returns (bool);
 }
 
+
+// interface for IERC721's Receiver
 interface IERC721Receiver {
     function onERC721Received(
         address operator,
@@ -41,13 +47,20 @@ interface IERC721Receiver {
     ) external returns (bytes4);
 }
 
-contract ERC721 is IERC721 {
+contract ERC721 is IERC721{
+
+
+//declaring the transfer event
     event Transfer(
         address indexed from, address indexed to, uint256 indexed id
     );
+
+    //declaring the approval event
     event Approval(
         address indexed owner, address indexed spender, uint256 indexed id
     );
+
+    //declaring the approvalforall event
     event ApprovalForAll(
         address indexed owner, address indexed operator, bool approved
     );
@@ -64,6 +77,7 @@ contract ERC721 is IERC721 {
     // Mapping from owner to operator approvals
     mapping(address => mapping(address => bool)) public isApprovedForAll;
 
+
     function supportsInterface(bytes4 interfaceId)
         external
         pure
@@ -72,6 +86,7 @@ contract ERC721 is IERC721 {
         return interfaceId == type(IERC721).interfaceId
             || interfaceId == type(IERC165).interfaceId;
     }
+
 
     function ownerOf(uint256 id) external view returns (address owner) {
         owner = _ownerOf[id];
@@ -90,6 +105,7 @@ contract ERC721 is IERC721 {
 
     function approve(address spender, uint256 id) external {
         address owner = _ownerOf[id];
+        require(spender != address(0), "invalid spender address");
         require(
             msg.sender == owner || isApprovedForAll[owner][msg.sender],
             "not authorized"
@@ -134,6 +150,7 @@ contract ERC721 is IERC721 {
     function safeTransferFrom(address from, address to, uint256 id) external {
         transferFrom(from, to, id);
 
+      require(_isApprovedOrOwner(msg.sender,from, id), "Caller is not owner nor approved");
         require(
             to.code.length == 0
                 || IERC721Receiver(to).onERC721Received(msg.sender, from, id, "")
@@ -150,7 +167,9 @@ contract ERC721 is IERC721 {
     ) external {
         transferFrom(from, to, id);
 
-        require(
+     require(_isApprovedOrOwner(msg.sender,from, id), "Caller is not owner nor approved");
+     require(to != address(0), "Cannot transfer to zero address");
+     require(
             to.code.length == 0
                 || IERC721Receiver(to).onERC721Received(msg.sender, from, id, data)
                     == IERC721Receiver.onERC721Received.selector,
@@ -183,11 +202,12 @@ contract ERC721 is IERC721 {
 
 contract MyNFT is ERC721 {
     function mint(address to, uint256 id) external {
+require(msg.sender == _ownerOf[id], "Can't call this function");
         _mint(to, id);
     }
 
-    function burn(uint256 id) external {
-        require(msg.sender == _ownerOf[id], "not owner");
+    function burn(uint256 id) external  {
+        require(msg.sender == _ownerOf[id], "Can't call this function");
         _burn(id);
     }
 }
