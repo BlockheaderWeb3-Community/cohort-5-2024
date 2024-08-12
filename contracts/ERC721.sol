@@ -52,6 +52,17 @@ contract ERC721 is IERC721 {
         address indexed owner, address indexed operator, bool approved
     );
 
+    address private _owner;
+
+    constructor() {
+        _owner = msg.sender; 
+    }
+
+    modifier onlyOwner() {
+        require(_owner == msg.sender, "You are not anthorized");
+        _;
+    }
+
     // Mapping from token ID to owner address
     mapping(uint256 => address) internal _ownerOf;
 
@@ -84,11 +95,13 @@ contract ERC721 is IERC721 {
     }
 
     function setApprovalForAll(address operator, bool approved) external {
+        require(operator != address(0), "Operator cannot be address zero");
         isApprovedForAll[msg.sender][operator] = approved;
         emit ApprovalForAll(msg.sender, operator, approved);
     }
 
     function approve(address spender, uint256 id) external {
+        require(spender != address(0), "Spender cannot be address zero");
         address owner = _ownerOf[id];
         require(
             msg.sender == owner || isApprovedForAll[owner][msg.sender],
@@ -117,6 +130,7 @@ contract ERC721 is IERC721 {
     }
 
     function transferFrom(address from, address to, uint256 id) public {
+        require(from != address(0), "from address cannot be address zero");
         require(from == _ownerOf[id], "from != owner");
         require(to != address(0), "transfer to zero address");
 
@@ -158,7 +172,7 @@ contract ERC721 is IERC721 {
         );
     }
 
-    function _mint(address to, uint256 id) internal {
+    function _mint(address to, uint256 id) internal onlyOwner {
         require(to != address(0), "mint to zero address");
         require(_ownerOf[id] == address(0), "already minted");
 
@@ -182,7 +196,7 @@ contract ERC721 is IERC721 {
 }
 
 contract MyNFT is ERC721 {
-    function mint(address to, uint256 id) external {
+    function mint(address to, uint256 id) external onlyOwner{
         _mint(to, id);
     }
 
