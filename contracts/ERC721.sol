@@ -52,6 +52,18 @@ contract ERC721 is IERC721 {
         address indexed owner, address indexed operator, bool approved
     );
 
+    address public owner;
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Caller is not the owner");
+        _;
+    }
+
+    constructor(){
+        owner = msg.sender 
+    }
+
+
     // Mapping from token ID to owner address
     mapping(uint256 => address) internal _ownerOf;
 
@@ -182,7 +194,7 @@ contract ERC721 is IERC721 {
 }
 
 contract MyNFT is ERC721 {
-    function mint(address to, uint256 id) external {
+    function mint(address to, uint256 id) external onlyOwner {
         _mint(to, id);
     }
 
