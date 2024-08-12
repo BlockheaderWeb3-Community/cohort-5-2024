@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
+
 import "./Ownable.sol";
 import "./Student.sol";
 
@@ -11,12 +12,12 @@ contract StudentRegistry is Ownable {
 
     //custom data type
    
+   event paid(address _from, address _to, uint256 _value);
   
     //dynamic array of students
     Student[] private students;
 
     mapping(address => Student) public studentsMapping;
-
 
     modifier isNotAddressZero() {
         require(msg.sender != address(0), "Invalid Address");
@@ -27,8 +28,9 @@ contract StudentRegistry is Ownable {
     function addStudent(
         address _studentAddr,
         string memory _name,
-        uint8 _age
-    ) public  isNotAddressZero {
+        uint8 _age,
+        bool _hasPaid
+    ) public  isNotAddressZero onlyOwner {
         if (bytes(_name).length == 0) {
             revert NameIsEmpty();
         }
@@ -42,7 +44,8 @@ contract StudentRegistry is Ownable {
             studentAddr: _studentAddr,
             name: _name,
             age: _age,
-            studentId: _studentId
+            studentId: _studentId,
+            hasPaid: _hasPaid 
         });
 
         students.push(student);
@@ -69,6 +72,37 @@ contract StudentRegistry is Ownable {
         return studentsMapping[_studentAddr];
     }
 
+    // Register student
+    function register(address _studentAddr, address _owner, uint256 amount, string memory _name, uint256 _studentId, uint8 _age) public payable isNotAddressZero {
+        require(msg.value == 1, "You have to send 1 ether to register");
+        Student memory student = Student({
+            studentAddr: _studentAddr,
+            name: _name,
+            age: _age,
+            studentId: _studentId,
+            hasPaid: true
+        });
+
+        students.push(student);
+
+        // add student to studentsMapping
+        studentsMapping[_studentAddr] = student;
+
+        emit paid(_studentAddr, _owner, amount);
+    }
+
+      // Function to transfer Ether from this contract to address from input
+    function transfer(address payable _to, uint256 _amount) public onlyOwner {
+        (bool success,) = _to.call{value: _amount}("");
+        require(success, "Failed to send Ether");
+    }
+
+    function withdraw() public {
+        uint256 amount = address(this).balance;
+        (bool success,) = owner.call{value: amount}("");
+        require(success, "Failed to send Ether");
+    }
+
     function deleteStudent(address _studentAddr)
         public
         onlyOwner
@@ -85,14 +119,14 @@ contract StudentRegistry is Ownable {
             studentAddr: address(0),
             name: "",
             age: 0,
-            studentId: 0
+            studentId: 0,
+            hasPaid: false
         });
 
         studentsMapping[_studentAddr] = student;
     }
 
-
-    function modifyOwner(address _newOwner) public {
+    function modifyOwner(address _newOwner) public onlyOwner {
         changeOwner(_newOwner);
     }
 }
