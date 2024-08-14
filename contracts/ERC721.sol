@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity >=0.7.0 <0.9.0 ;
+import "contracts/Ownable.sol";
+
 
 interface IERC165 {
     function supportsInterface(bytes4 interfaceID)
@@ -41,7 +43,7 @@ interface IERC721Receiver {
     ) external returns (bytes4);
 }
 
-contract ERC721 is IERC721 {
+contract ERC721 is IERC721, Ownable {
     event Transfer(
         address indexed from, address indexed to, uint256 indexed id
     );
@@ -88,7 +90,7 @@ contract ERC721 is IERC721 {
         emit ApprovalForAll(msg.sender, operator, approved);
     }
 
-    function approve(address spender, uint256 id) external {
+    function approve(address spender, uint256 id) external onlyOwner {
         address owner = _ownerOf[id];
         require(
             msg.sender == owner || isApprovedForAll[owner][msg.sender],
@@ -117,6 +119,7 @@ contract ERC721 is IERC721 {
     }
 
     function transferFrom(address from, address to, uint256 id) public {
+        require(_ownerOf[id] != address(0), "token doesn't exist");
         require(from == _ownerOf[id], "from != owner");
         require(to != address(0), "transfer to zero address");
 
@@ -133,7 +136,7 @@ contract ERC721 is IERC721 {
 
     function safeTransferFrom(address from, address to, uint256 id) external {
         transferFrom(from, to, id);
-
+        require(_isApprovedOrOwner(from, msg.sender, id), "not authorized");
         require(
             to.code.length == 0
                 || IERC721Receiver(to).onERC721Received(msg.sender, from, id, "")
@@ -149,7 +152,7 @@ contract ERC721 is IERC721 {
         bytes calldata data
     ) external {
         transferFrom(from, to, id);
-
+        require(_isApprovedOrOwner(from, msg.sender, id), "not authorized");
         require(
             to.code.length == 0
                 || IERC721Receiver(to).onERC721Received(msg.sender, from, id, data)
@@ -182,11 +185,11 @@ contract ERC721 is IERC721 {
 }
 
 contract MyNFT is ERC721 {
-    function mint(address to, uint256 id) external {
+    function mint(address to, uint256 id) external onlyOwner {
         _mint(to, id);
     }
 
-    function burn(uint256 id) external {
+    function burn(uint256 id) external onlyOwner  {
         require(msg.sender == _ownerOf[id], "not owner");
         _burn(id);
     }
