@@ -74,8 +74,9 @@ contract ERC721 is IERC721 {
     }
 
     function ownerOf(uint256 id) external view returns (address owner) {
-        owner = _ownerOf[id];
         require(owner != address(0), "token doesn't exist");
+        owner = _ownerOf[id];
+        
     }
 
     function balanceOf(address owner) external view returns (uint256) {
@@ -118,7 +119,7 @@ contract ERC721 is IERC721 {
 
     function transferFrom(address from, address to, uint256 id) public {
         require(from == _ownerOf[id], "from != owner");
-        require(to != address(0), "transfer to zero address");
+
 
         require(_isApprovedOrOwner(from, msg.sender, id), "not authorized");
 
