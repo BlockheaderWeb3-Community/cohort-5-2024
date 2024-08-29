@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "hardhat/console.sol";
+
 import "./Ownable.sol";
 import "./Student.sol";
 
@@ -11,9 +13,9 @@ contract StudentRegistry is Ownable {
     error UnderAge(uint8 age, uint8 expectedAge);
 
     //custom data type
-   
-   event paid(address _from, address _to, uint256 _value);
-  
+
+    event paid(address _from, address _to, uint256 _value);
+
     //dynamic array of students
     Student[] private students;
 

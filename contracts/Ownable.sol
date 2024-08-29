@@ -4,12 +4,12 @@ pragma solidity >=0.7.0 <0.9.0;
 
 contract Ownable {
 
-    address private owner;
+    address public owner;
 
     event ChangeOwner(address indexed oldOwner, address indexed  newOwner);
 
-    constructor(){
-        owner = msg.sender;
+    constructor() {
+        owner = payable (msg.sender);
     }
 
 
