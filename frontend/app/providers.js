@@ -9,6 +9,7 @@ import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 
 const queryClient = new QueryClient();
 
+
 export function Providers({ children, cookie }) {
   const initialState = cookieToInitialState(config, cookie)
   return (

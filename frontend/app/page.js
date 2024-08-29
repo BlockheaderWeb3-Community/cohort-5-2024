@@ -1,11 +1,24 @@
 "use client";
 
+// import { config } from '../wagmi'
+
 import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useReadContract } from 'wagmi'
 import { abi } from './abi';
 import { useState } from "react";
 import { useWriteContract } from 'wagmi'
+
+import { useAccount } from 'wagmi';
+import { useAccountEffect } from 'wagmi';
+import { useBalance } from 'wagmi';
+import { sepolia } from 'wagmi/chains';
+import { useBlockNumber } from 'wagmi';
+import { useBlock } from 'wagmi'
+import { useSwitchAccount } from 'wagmi'
+
+import { useWatchContractEvent } from 'wagmi'
+ 
 
 const contractConfig = {
   address: '0x301d7eEb5E498f99634cB8B8F5deac0bdde859C0',
@@ -19,21 +32,63 @@ export default function Home() {
     functionName: 'getCount',
   });
 
+  
+
   // Prepare the write functions for increment and decrement
 
   const { data: hash, isPending, writeContract } = useWriteContract()
 
-  const  increment = () => writeContract({
-      ...contractConfig,
-      functionName: 'increment',
-      onSuccess: () => refetch(),
+  const increment = () => writeContract({
+    ...contractConfig,
+    functionName: 'increment',
+    onSuccess: () => refetch(),
   })
 
   const decrement = () => writeContract({
     ...contractConfig,
     functionName: 'decrement',
     onSuccess: () => refetch(),
-})
+  })
+
+  // Check connected account
+  const account = useAccount();
+
+  if (account.status === 'connected') {
+    var ownerAddress = account.address;
+  }
+
+  // useAccount Effect
+  useAccountEffect({
+    onConnect(data) {
+      console.log('Connected!', data)
+    },
+    onDisconnect() {
+      console.log('Disconnected!')
+    },
+  });
+
+  // Check balance
+  const balance = useBalance({
+    address: ownerAddress,
+    chainId: sepolia.id,
+  })
+
+  // Get closest blocknumber
+  const useBlockNo = useBlockNumber()
+
+  const useBlocks = useBlock({
+    blockNumber: useBlockNo.data
+  })
+
+  useWatchContractEvent({
+    address: '0x301d7eEb5E498f99634cB8B8F5deac0bdde859C0',
+    abi,
+    eventName: 'Log',
+    onLogs(logs) {
+      console.log('New logs!', logs)
+    },
+  })
+  
 
   return (
     <div className="bg-white">
@@ -59,7 +114,7 @@ export default function Home() {
         <div className="mx-auto max-w-2xl py-10 sm:py-48 lg:py-56">
           <div className="hidden sm:mb-8 sm:flex sm:justify-center">
             <div className="relative rounded-full px-3 py-1 text-sm leading-6 text-gray-600 ring-1 ring-gray-900/10 hover:ring-gray-900/20">
-              Limitlxx's Counter Dapp
+              {ownerAddress ? ownerAddress.toString() : 'Limitlxx\'s' } Counter Dapp
             </div>
           </div>
           <div className="text-center">
@@ -70,7 +125,7 @@ export default function Home() {
               </button>
               <button type="button" disabled={isPending} onClick={() => decrement()} className="rounded-md bg-red-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
                 Decrease
-                </button>
+              </button>
             </div>
           </div>
         </div>
