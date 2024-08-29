@@ -2,7 +2,7 @@ const {
     time,
     loadFixture,
   } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
-  //   const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
+  const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
   const { expect } = require("chai");
   // const { ethers } = require("hardhat");
   
@@ -100,6 +100,34 @@ const {
           });
         });
       });
+    });
+
+    describe("Events", () => {
+      it("should emit an event when count is increased", async () => {
+        const deployedCounter = await loadFixture(deployUtil);
+
+        const count1 = await deployedCounter.count();
+        console.log("count1 ___", count1);
+        expect(count1).to.eq(0);
+
+        await expect(deployedCounter.increaseByOne())
+        .to.emit(deployedCounter, "CountIncreased")
+        .withArgs(count1 + BigInt(1), anyValue)
+      })
+
+      it("should emit an event when count is decreased", async () => {
+        const deployedCounter = await loadFixture(deployUtil);
+
+        await deployedCounter.increaseByOne();
+
+        const count1 = await deployedCounter.count();
+        console.log("count1 ____", count1);
+        expect(count1).to.eq(1);
+
+        await expect(deployedCounter.decreaseByOne())
+        .to.emit(deployedCounter, "CountDecreased")
+        .withArgs(count1 - BigInt(1), anyValue)
+      })
     });
   });
   
