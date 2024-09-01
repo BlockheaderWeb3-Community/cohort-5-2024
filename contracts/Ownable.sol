@@ -29,7 +29,11 @@ contract Ownable {
     }
 
     // Function to get the owner of the contract
-   
+    function getOwner() public view virtual returns(address) {
+        return owner;
+    }
+
+
 
     // Function to change the owner using an address as a parmeter 
     function changeOwner(address payable _newOwner) public onlyOwner {

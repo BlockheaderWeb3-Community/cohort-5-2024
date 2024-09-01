@@ -54,4 +54,13 @@ describe("Ownable Test Suite", () => {
       });
     });
   });
+
+  describe("Events", () => {
+    it("should emit ChangeOwner event when owner is change", async () => {
+      const { deployedOwnable, owner, addr1, addr2, ZERO_ADDRESS } = await loadFixture(deployUtil);
+      await expect(deployedOwnable.connect(owner).changeOwner(addr1.address))
+        .to.emit(deployedOwnable, "ChangeOwner")
+        .withArgs(owner.address, addr1.address);
+    });
+  });
 });
