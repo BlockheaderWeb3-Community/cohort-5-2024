@@ -22,8 +22,8 @@ contract StudentRegistryV2 is Ownable {
         string _StName,
         uint8 _stAge
     );
-    event authorizeStudentReg(address _studentAddress);
-    event addStud(address _studentAddr);
+    event AuthorizeStudentReg(address _studentAddress);
+    event AddStudent(address _studentAddr);
     event PaidFee(address indexed payer, uint256 amount);
 
     // Function For Paying
@@ -46,9 +46,9 @@ contract StudentRegistryV2 is Ownable {
             tempstudentsMapping[_studentAddr].studentAddr == address(0),
             "You're already registered"
         );
-        require(hasPaidMapping[msg.sender], "You must pay first");
-        require(bytes(_name).length > 0, "No name has been inputed");
-        require(_age >= 18, "name should be 18 or more");
+        require(hasPaidMapping[_studentAddr], "You must pay first");
+        require(bytes(_name).length > 0, "No name has been inputted");
+        require(_age >= 18, "Age should be 18 or more");
 
         uint256 _studentId = students.length + 1;
         // A variable is defined to match the array format and datatype
@@ -67,6 +67,7 @@ contract StudentRegistryV2 is Ownable {
         emit registerStudent(_studentAddr, _name, _age);
     }
 
+
     // Function for authorizing registered Student
     function authorizeStudentRegistration(
         address _studentAddr
@@ -77,10 +78,10 @@ contract StudentRegistryV2 is Ownable {
         );
         require(
             studentsMapping[_studentAddr].studentAddr == address(0),
-            "You're already registered"
+            "You're already authorized"
         );
         addStudent(_studentAddr);
-        emit authorizeStudentReg(_studentAddr);
+        emit AuthorizeStudentReg(_studentAddr);
     }
 
     // Function for Adding student, this function is called in the authorizeStudentRegistration() function
@@ -99,7 +100,7 @@ contract StudentRegistryV2 is Ownable {
 
         // add student to Studentmapping
         studentsMapping[_studentAddr] = student;
-        emit addStud(_studentAddr);
+        emit AddStudent(_studentAddr);
     }
 
     // Function to get student by call the ID
