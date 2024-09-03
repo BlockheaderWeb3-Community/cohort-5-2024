@@ -189,7 +189,7 @@ describe.only("StudentRegistryV2 Test Suite", () => {
             ).to.be.revertedWith("age should be 18 or more");
           })
         })
-        
+
         describe("Successful Student Register", () => {
           it("should successfully regsiter a student", async () => {
             const {deployedStudentRegistryV2, addr1} = await loadFixture(deployUtil);
@@ -211,6 +211,19 @@ describe.only("StudentRegistryV2 Test Suite", () => {
 
             const studentMap = await deployedStudentRegistryV2.studentsMapping(addr1);
             await expect(...studentMap).to.eq(...registeredStudent);
+          })
+        })
+
+        describe("Events", () => {
+          it("should emit an event when a student is registered", async () => {
+            const {deployedStudentRegistryV2, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+
+            await expect(
+              deployedStudentRegistryV2.connect(addr1).register("Sandy", 20)
+            ).to.emit(deployedStudentRegistryV2, "RegisterStudent")
+            .withArgs(addr1.address, "Sandy", 20, anyValue)
           })
         })
       })

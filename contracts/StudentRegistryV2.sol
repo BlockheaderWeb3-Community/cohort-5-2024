@@ -26,7 +26,7 @@ contract StudentRegistryV2 is Ownable {
     event authorizeStudentReg(address _studentAddress);
     event addStud(address _studentAddr);
     event PaidFee(address indexed payer, uint256 amount);
-    event registerStudent(address _addr, string name, uint8 age, uint256 time);
+    event RegisterStudent(address _addr, string name, uint8 age, uint256 time);
 
     // Function For Paying
     function payFee() public payable {
@@ -53,7 +53,7 @@ contract StudentRegistryV2 is Ownable {
         require(_age >= 18, "age should be 18 or more");
         student.name = _name;
         student.age = _age;
-        emit registerStudent(msg.sender, _name, _age, block.timestamp);
+        emit RegisterStudent(msg.sender, _name, _age, block.timestamp);
     }
 
     // Function for authorizing registered Student
