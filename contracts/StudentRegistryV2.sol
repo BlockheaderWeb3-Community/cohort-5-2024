@@ -23,8 +23,8 @@ contract StudentRegistryV2 is Ownable {
         string _StName,
         uint8 _stAge
     );
-    event authorizeStudentReg(address _studentAddress);
-    event addStud(address _studentAddr);
+    event AuthorizeStudentReg(address _studentAddress, uint256 time);
+    event AddStud(address _studentAddr);
     event PaidFee(address indexed payer, uint256 amount);
     event RegisterStudent(address _addr, string name, uint8 age, uint256 time);
 
@@ -70,7 +70,7 @@ contract StudentRegistryV2 is Ownable {
         student.isAuthorized = true;
         addStudent(_studentAddr);
         students.push(student);
-        emit authorizeStudentReg(_studentAddr);
+        emit AuthorizeStudentReg(_studentAddr, block.timestamp);
     }
 
     // Function for Adding student, this function is called in the authorizeStudentRegistration() function
@@ -78,6 +78,7 @@ contract StudentRegistryV2 is Ownable {
         uint256 _studentId = students.length + 1;
         Student storage student =  studentsMapping[_studentAddr];
         student.studentId = _studentId;
+        emit AddStud(_studentAddr);
     }
 
     // Function to get student by call the ID

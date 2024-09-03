@@ -264,6 +264,35 @@ describe.only("StudentRegistryV2 Test Suite", () => {
             ).to.revertedWith("You have already been authorized");
           })
         })
+
+        describe("Successful Authorization", () => {
+          it("should successfully initialize studentID and isAuthorized in student struct", async () => {
+            const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+            await deployedStudentRegistryV2.connect(addr1).register("Aaron", 20);
+            await deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1);
+
+            const authorizedStudent = [addr1, "Aaron", 1, 20, true, true];
+
+            const studentMapping = await deployedStudentRegistryV2.studentsMapping(addr1);
+
+            expect(...authorizedStudent).to.eq(...studentMapping);
+          })
+
+          it("should successfully push to student array", async () => {
+            const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+            await deployedStudentRegistryV2.connect(addr1).register("Maria", 20);
+            await deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1);
+
+            const studentMapping = await deployedStudentRegistryV2.studentsMapping(addr1);
+            const student1= await deployedStudentRegistryV2.students(0);
+  
+            expect(...student1).to.eq(...studentMapping);
+          })
+        })
       })
     });
   });
