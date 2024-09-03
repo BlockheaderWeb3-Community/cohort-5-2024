@@ -189,6 +189,30 @@ describe.only("StudentRegistryV2 Test Suite", () => {
             ).to.be.revertedWith("age should be 18 or more");
           })
         })
+        
+        describe("Successful Student Register", () => {
+          it("should successfully regsiter a student", async () => {
+            const {deployedStudentRegistryV2, addr1} = await loadFixture(deployUtil);
+
+            // Make Payment
+            await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1")});
+
+            // Register Student
+            await deployedStudentRegistryV2.connect(addr1).register("Daniel", 19);
+
+            const registeredStudent = [
+              addr1.address,
+              "Daniel",
+              0,
+              19,
+              true,
+              false
+            ]
+
+            const studentMap = await deployedStudentRegistryV2.studentsMapping(addr1);
+            await expect(...studentMap).to.eq(...registeredStudent);
+          })
+        })
       })
     });
   });
