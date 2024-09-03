@@ -35,6 +35,7 @@ contract StudentRegistryV2 is Ownable {
         require(student.hasPaid == false, "You have paid already"); 
         (bool success, ) = address(this).call{value: msg.value}("");
         require(success, "failed to send ETH");
+
         student.studentAddr = msg.sender;
         student.hasPaid = true;
 
@@ -47,7 +48,11 @@ contract StudentRegistryV2 is Ownable {
         uint8 _age
     ) public payable {
         require(bytes(_name).length > 0, "No name has been inputed");
-        require(_age >= 18, "name should be 18 or more");
+        require(_age >= 18, "age should be 18 or more");
+                require(
+            studentsMapping[msg.sender].studentAddr != address(0),
+            "Pls make payment first"
+        );
         Student storage student =  studentsMapping[msg.sender];
         student.name = _name;
         student.age = _age;
@@ -58,12 +63,17 @@ contract StudentRegistryV2 is Ownable {
     function authorizeStudentRegistration(
         address _studentAddr
     ) public onlyOwner {
-        require(
-            studentsMapping[_studentAddr].studentAddr == address(0),
-            "You're already registered"
-        );
-        addStudent(_studentAddr);
-        emit authorizeStudentReg(_studentAddr);
+    require(
+        !studentsMapping[_studentAddr].isAuthorized,
+        "Student is already authorized"
+    );
+require(bytes(studentsMapping[_studentAddr].name).length != 0, "Student is not registered");
+
+        // addStudent(_studentAddr);
+    Student storage student = studentsMapping[_studentAddr];
+    student.isAuthorized = true;
+    students.push(student);
+    emit authorizeStudentReg(_studentAddr);
     }
 
     // Function for Adding student, this function is called in the authorizeStudentRegistration() function
@@ -134,6 +144,10 @@ contract StudentRegistryV2 is Ownable {
     function getOwner() public view override returns (address) {
         return super.getOwner();
     }
+
+    function getStudentsLength() public view returns (uint) {
+    return students.length;
+}
 
 
     receive() external payable {}
