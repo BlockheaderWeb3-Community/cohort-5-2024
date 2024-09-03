@@ -26,6 +26,7 @@ contract StudentRegistryV2 is Ownable {
     event authorizeStudentReg(address _studentAddress);
     event addStud(address _studentAddr);
     event PaidFee(address indexed payer, uint256 amount);
+    event registerStudent(address _addr, string name, uint8 age, uint256 time);
 
     // Function For Paying
     function payFee() public payable {
@@ -46,30 +47,37 @@ contract StudentRegistryV2 is Ownable {
         string memory _name,
         uint8 _age
     ) public payable {
+        Student storage student = studentsMapping[msg.sender];
+        require(student.hasPaid == true, "You need to pay fees");
         require(bytes(_name).length > 0, "No name has been inputed");
-        require(_age >= 18, "name should be 18 or more");
-        Student storage student =  studentsMapping[msg.sender];
+        require(_age >= 18, "age should be 18 or more");
         student.name = _name;
         student.age = _age;
-        emit registerStudent(msg.sender, _name, _age);
+        emit registerStudent(msg.sender, _name, _age, block.timestamp);
     }
 
     // Function for authorizing registered Student
     function authorizeStudentRegistration(
         address _studentAddr
     ) public onlyOwner {
-        require(
-            studentsMapping[_studentAddr].studentAddr == address(0),
-            "You're already registered"
-        );
+        // require(
+        //     studentsMapping[_studentAddr].studentAddr == address(0),
+        //     "You're already registered"
+        // );
+        Student storage student =  studentsMapping[_studentAddr];
+        require(student.hasPaid == true, "You need to pay fees");
+        require(student.isAuthorized == false, "You have already been authorized");
+        student.isAuthorized = true;
         addStudent(_studentAddr);
+        students.push(student);
         emit authorizeStudentReg(_studentAddr);
     }
 
     // Function for Adding student, this function is called in the authorizeStudentRegistration() function
-    function addStudent(address _studentAddr) private {
+    function addStudent(address _studentAddr) private onlyOwner() {
         uint256 _studentId = students.length + 1;
-     
+        Student storage student =  studentsMapping[_studentAddr];
+        student.studentId = _studentId;
     }
 
     // Function to get student by call the ID
@@ -127,7 +135,7 @@ contract StudentRegistryV2 is Ownable {
     }
 
 
-    function getAllStudents() public view  returns (Student[] memory students) {
+    function getAllStudents() public view  returns (Student[] memory) {
         return students;
     }
 

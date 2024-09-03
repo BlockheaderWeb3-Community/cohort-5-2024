@@ -24,7 +24,7 @@ const toDecimal = (amount) => {
   return parseFloat(fromEther(amount));
 };
 
-describe("StudentRegistryV2 Test Suite", () => {
+describe.only("StudentRegistryV2 Test Suite", () => {
   // deploy util function
   const deployUtil = async () => {
     const StudentRegistryV2 = await ethers.getContractFactory("StudentRegistryV2"); // instance of StudentRegistryV2 contract in Contracts folder
@@ -79,7 +79,7 @@ describe("StudentRegistryV2 Test Suite", () => {
           );
         });
 
-        it.only("should revert attempt to payFee multiple times", async () => {
+        it("should revert attempt to payFee multiple times", async () => {
           const { deployedStudentRegistryV2, addr1, deployedStudentRegistryV2Address } = await loadFixture(deployUtil);
           // BEFORE PAYFEE TXN
           const initialContractBalance = await getBalance(deployedStudentRegistryV2Address);
@@ -158,6 +158,38 @@ describe("StudentRegistryV2 Test Suite", () => {
             .withArgs(addr1.address, ethers.parseEther("1"));
         });
       });
+
+      describe("Register Students", () => {
+        describe("Validations", () => {
+          it("should revert when trying to register without making payment", async () => {
+            const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
+
+            await expect(
+              deployedStudentRegistryV2.register("John", 20)
+            ).to.be.revertedWith("You need to pay fees");
+          })
+          
+          it("should revert when trying to register with no name", async () => {
+            const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1")});
+
+            await expect(
+              deployedStudentRegistryV2.connect(addr1).register("", 20)
+            ).to.be.revertedWith("No name has been inputed");
+          })
+
+          it("should revert when trying to register a student who is below the age of 18", async () => {
+            const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1")});
+
+            await expect(
+              deployedStudentRegistryV2.connect(addr1).register("West", 12)
+            ).to.be.revertedWith("age should be 18 or more");
+          })
+        })
+      })
     });
   });
 });
