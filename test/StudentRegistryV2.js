@@ -227,6 +227,44 @@ describe.only("StudentRegistryV2 Test Suite", () => {
           })
         })
       })
+
+      describe("Authorization", () => {
+        describe("Validations", () => {
+          it("should revert when non-owner tries to authorize", async () => {
+            const {deployedStudentRegistryV2, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+            
+            await deployedStudentRegistryV2.connect(addr1).register("Aaron", 20);
+
+            await expect(
+              deployedStudentRegistryV2.connect(addr1).authorizeStudentRegistration(addr1)
+            ).to.be.revertedWith("Caller not owner");
+          })
+
+          it("should revert when trying to authorize student who has not paid", async () => {
+            const { deployedStudentRegistryV2,owner, addr1 } = await loadFixture(deployUtil);
+
+            await expect(
+              deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1)
+            ).to.be.revertedWith("You need to pay fees");
+          })
+
+          it("should revert when trying to authorize student who has already been authorized", async () => {
+            const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+            
+            await deployedStudentRegistryV2.connect(addr1).register("Aaron", 20);
+
+            await deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1);
+
+            await expect(
+              deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1)
+            ).to.revertedWith("You have already been authorized");
+          })
+        })
+      })
     });
   });
 });
