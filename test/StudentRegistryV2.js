@@ -254,9 +254,7 @@ describe.only("StudentRegistryV2 Test Suite", () => {
             const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
 
             await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
-            
             await deployedStudentRegistryV2.connect(addr1).register("Aaron", 20);
-
             await deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1);
 
             await expect(
@@ -291,6 +289,32 @@ describe.only("StudentRegistryV2 Test Suite", () => {
             const student1= await deployedStudentRegistryV2.students(0);
   
             expect(...student1).to.eq(...studentMapping);
+          })
+        })
+
+        describe("Events", () => {
+          it("should emit an event when student is added", async () => {
+            const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+            await deployedStudentRegistryV2.connect(addr1).register("Aaron", 20);
+
+            await expect( 
+              deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1)
+            ).to.emit(deployedStudentRegistryV2, "AddStud")
+            .withArgs(addr1.address);
+          })
+
+          it("should emit an event when student is authorized", async () => {
+            const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+            await deployedStudentRegistryV2.connect(addr1).register("Aaron", 20);
+
+            await expect( 
+              deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1)
+            ).to.emit(deployedStudentRegistryV2, "AuthorizeStudentReg")
+            .withArgs(addr1.address, anyValue);
           })
         })
       })
