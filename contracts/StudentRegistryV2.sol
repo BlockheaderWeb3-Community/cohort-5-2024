@@ -63,15 +63,17 @@ contract StudentRegistryV2 is Ownable {
     function authorizeStudentRegistration(
         address _studentAddr
     ) public onlyOwner {
-        require(
-            studentsMapping[_studentAddr].studentAddr == address(0),
-            "You're already registered"
-        );
+    require(
+        !studentsMapping[_studentAddr].isAuthorized,
+        "Student is already authorized"
+    );
+require(bytes(studentsMapping[_studentAddr].name).length != 0, "Student is not registered");
+
         // addStudent(_studentAddr);
-         Student storage student =  studentsMapping[_studentAddr];
-        student.isAuthorized = true;
-        
-        emit authorizeStudentReg(_studentAddr);
+    Student storage student = studentsMapping[_studentAddr];
+    student.isAuthorized = true;
+    students.push(student);
+    emit authorizeStudentReg(_studentAddr);
     }
 
     // Function for Adding student, this function is called in the authorizeStudentRegistration() function

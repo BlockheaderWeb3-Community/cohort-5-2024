@@ -194,30 +194,70 @@ describe("StudentRegistryV2 Test Suite", () => {
 
           await deployedStudentRegistryV2.connect(addr1).register("John Cena", 19);
           const stuArr = await deployedStudentRegistryV2.studentsMapping(addr1.address);
-          expect(stuArr.hasPaid).to.eq(true)
-          expect(stuArr.isAuthorized).to.eq(false)
-          expect(stuArr.name).to.eq("John Cena")
-          expect(stuArr.age).to.eq(19)
+          expect(stuArr.hasPaid).to.eq(true);
+          expect(stuArr.isAuthorized).to.eq(false);
+          expect(stuArr.name).to.eq("John Cena");
+          expect(stuArr.age).to.eq(19);
         });
       });
-      describe.only("Event", () => {
+      describe("Event", () => {
         it("should emit registerStudent", async () => {
           const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
 
           await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1") });
 
-          await expect(
-            deployedStudentRegistryV2.connect(addr1).register("John Cena", 19))
+          await expect(deployedStudentRegistryV2.connect(addr1).register("John Cena", 19))
             .to.emit(deployedStudentRegistryV2, "registerStudent")
             .withArgs(addr1.address, "John Cena", 19);
         });
       });
     });
 
+    describe("Authorize Student Registration Transaction", () => {
+      describe("Validations", () => {
+        it("should revert attemp to authorize student again", async () => {
+          const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
+
+          await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1") });
+          await deployedStudentRegistryV2.connect(addr1).register("John Cena", 19)
+          await deployedStudentRegistryV2.authorizeStudentRegistration(addr1.address)
+          await expect(deployedStudentRegistryV2.authorizeStudentRegistration(addr1.address)).to.be.revertedWith("Student is already authorized") 
+        });
+        it("should revert if student is not registered first", async () => {
+          const { deployedStudentRegistryV2, addr1, addr2 } = await loadFixture(deployUtil);
+          await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1") });
+          await expect(deployedStudentRegistryV2.authorizeStudentRegistration(addr2.address)).to.be.revertedWith("Student is not registered") 
+        });
+
+      });
+      describe("Success", () => {
+        it("should successfully authorize the student", async () => {
+          const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
+          await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1") });
+          await deployedStudentRegistryV2.connect(addr1).register("John Cena", 19);
+          await deployedStudentRegistryV2.authorizeStudentRegistration(addr1.address)
+
+          const stuArr = await deployedStudentRegistryV2.studentsMapping(addr1.address);
+          expect(stuArr.hasPaid).to.eq(true);
+          expect(stuArr.isAuthorized).to.eq(true);
+          expect(stuArr.name).to.eq("John Cena");
+          expect(stuArr.age).to.eq(19);
+        });
+      });
+
+      describe("Event", () => {
+        it("should emit registerStudent", async () => {
+          const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
+          await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1") });
+          deployedStudentRegistryV2.connect(addr1).register("John Cena", 19)
+
+          await expect(await deployedStudentRegistryV2.authorizeStudentRegistration(addr1.address))
+            .to.emit(deployedStudentRegistryV2, "authorizeStudentReg")
+            .withArgs(addr1.address);
+        });
+      });
+    });
+
     
-
-
-
-
   });
 });
