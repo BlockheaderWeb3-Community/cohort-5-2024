@@ -24,7 +24,7 @@ const toDecimal = (amount) => {
   return parseFloat(fromEther(amount));
 };
 
-describe("StudentRegistryV2 Test Suite", () => {
+describe.only("StudentRegistryV2 Test Suite", () => {
   // deploy util function
   const deployUtil = async () => {
     const StudentRegistryV2 = await ethers.getContractFactory("StudentRegistryV2"); // instance of StudentRegistryV2 contract in Contracts folder
@@ -79,7 +79,7 @@ describe("StudentRegistryV2 Test Suite", () => {
           );
         });
 
-        it.only("should revert attempt to payFee multiple times", async () => {
+        it("should revert attempt to payFee multiple times", async () => {
           const { deployedStudentRegistryV2, addr1, deployedStudentRegistryV2Address } = await loadFixture(deployUtil);
           // BEFORE PAYFEE TXN
           const initialContractBalance = await getBalance(deployedStudentRegistryV2Address);
@@ -104,7 +104,6 @@ describe("StudentRegistryV2 Test Suite", () => {
           expect(finalContractBalanceNum).to.be.closeTo(initialContractBalanceNum + 1, 0.01); // Use a tolerance for floating point comparison
 
           const studentsMapping = await deployedStudentRegistryV2.studentsMapping(addr1.address);
-          console.log("student mapping___", studentsMapping);
 
           const expectStudentStruct = [addr1.address, "", "0", "0", true, false];
           expect(...studentsMapping).to.eq(...expectStudentStruct);
@@ -158,6 +157,172 @@ describe("StudentRegistryV2 Test Suite", () => {
             .withArgs(addr1.address, ethers.parseEther("1"));
         });
       });
+
+      describe("Register Students", () => {
+        describe("Validations", () => {
+          it("should revert attempt to register without making payment", async () => {
+            const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
+
+            await expect(
+              deployedStudentRegistryV2.register("John", 20)
+            ).to.be.revertedWith("You need to pay fees");
+          })
+          
+          it("should revert attempt to register with no name", async () => {
+            const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1")});
+
+            await expect(
+              deployedStudentRegistryV2.connect(addr1).register("", 20)
+            ).to.be.revertedWith("No name has been inputed");
+          })
+
+          it("should revert attempt to register a student who is below the age of 18", async () => {
+            const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1")});
+
+            await expect(
+              deployedStudentRegistryV2.connect(addr1).register("West", 12)
+            ).to.be.revertedWith("age should be 18 or more");
+          })
+        })
+
+        describe("Successful Student Register", () => {
+          it("should successfully regsiter a student", async () => {
+            const {deployedStudentRegistryV2, addr1, deployedStudentRegistryV2Address} = await loadFixture(deployUtil);
+
+            // Check Balance Before txn
+            const initialContractBalance = await getBalance(deployedStudentRegistryV2Address);
+            const initialPayerBalance = await getBalance(addr1.address);
+
+            // Make Payment
+            await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1")});
+
+            const finalPayerBalance = await getBalance(addr1.address);
+            const finalContractBalance = await getBalance(deployedStudentRegistryV2Address);
+
+            // Assert the balance changes
+            const initialPayerBalanceNum = parseFloat(ethers.formatEther(initialPayerBalance));
+            const finalPayerBalanceNum = parseFloat(ethers.formatEther(finalPayerBalance));
+            const initialContractBalanceNum = parseFloat(ethers.formatEther(initialContractBalance));
+            const finalContractBalanceNum = parseFloat(ethers.formatEther(finalContractBalance));
+
+            // Check that the payer's balance decreased by 1 ETH
+            expect(finalPayerBalanceNum).to.be.closeTo(initialPayerBalanceNum - 1, 0.01); 
+            // Check that the contract's balance increased by 1 ETH
+            expect(finalContractBalanceNum).to.be.closeTo(initialContractBalanceNum + 1, 0.01); 
+            
+            // Register Student
+            await deployedStudentRegistryV2.connect(addr1).register("Daniel", 19);
+
+            const registeredStudent = [
+              addr1.address,
+              "Daniel",
+              0,
+              19,
+              true,
+              false
+            ]
+
+            const studentMap = await deployedStudentRegistryV2.studentsMapping(addr1);
+            await expect(...studentMap).to.eq(...registeredStudent);
+          })
+        })
+
+        describe("Events", () => {
+          it("should emit an event when a student is registered", async () => {
+            const {deployedStudentRegistryV2, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+
+            await expect(
+              deployedStudentRegistryV2.connect(addr1).register("Sandy", 20)
+            ).to.emit(deployedStudentRegistryV2, "RegisterStudent")
+            .withArgs(addr1.address, "Sandy", 20, anyValue)
+          })
+        })
+      })
+
+      describe("Authorization", () => {
+        describe("Validations", () => {
+          it("should revert non-owner attwmpt to authorize student", async () => {
+            const {deployedStudentRegistryV2, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+            
+            await deployedStudentRegistryV2.connect(addr1).register("Aaron", 20);
+
+            await expect(
+              deployedStudentRegistryV2.connect(addr1).authorizeStudentRegistration(addr1)
+            ).to.be.revertedWith("Caller not owner");
+          })
+
+          it("should revert attempt to authorize student who has not paid", async () => {
+            const { deployedStudentRegistryV2,owner, addr1 } = await loadFixture(deployUtil);
+
+            await expect(
+              deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1)
+            ).to.be.revertedWith("You need to pay fees");
+          })
+
+          it("should revert attempt to authorize student who has already been authorized", async () => {
+            const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+            await deployedStudentRegistryV2.connect(addr1).register("Aaron", 20);
+            await deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1);
+
+            await expect(
+              deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1)
+            ).to.revertedWith("You have already been authorized");
+          })
+        })
+
+        describe("Successful Authorization", () => {
+          it("should successfully initialize studentID and isAuthorized in student struct", async () => {
+            const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+            await deployedStudentRegistryV2.connect(addr1).register("Aaron", 20);
+            await deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1);
+
+            const authorizedStudent = [addr1, "Aaron", 1, 20, true, true];
+
+            const studentMapping = await deployedStudentRegistryV2.studentsMapping(addr1);
+
+            expect(...authorizedStudent).to.eq(...studentMapping);
+          })
+
+          it("should successfully push to student array", async () => {
+            const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+            await deployedStudentRegistryV2.connect(addr1).register("Maria", 20);
+            await deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1);
+
+            const studentMapping = await deployedStudentRegistryV2.studentsMapping(addr1);
+            const student1= await deployedStudentRegistryV2.students(0);
+  
+            expect(...student1).to.eq(...studentMapping);
+          })
+        })
+
+        describe("Events", () => {
+          it("should emit an event when student is authorized", async () => {
+            const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
+
+            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
+            await deployedStudentRegistryV2.connect(addr1).register("Aaron", 20);
+
+            await expect( 
+              deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1)
+            ).to.emit(deployedStudentRegistryV2, "AuthorizeStudentReg")
+            .withArgs(addr1.address, anyValue);
+          })
+        })
+      })
     });
   });
 });
