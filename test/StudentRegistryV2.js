@@ -104,7 +104,6 @@ describe.only("StudentRegistryV2 Test Suite", () => {
           expect(finalContractBalanceNum).to.be.closeTo(initialContractBalanceNum + 1, 0.01); // Use a tolerance for floating point comparison
 
           const studentsMapping = await deployedStudentRegistryV2.studentsMapping(addr1.address);
-          console.log("student mapping___", studentsMapping);
 
           const expectStudentStruct = [addr1.address, "", "0", "0", true, false];
           expect(...studentsMapping).to.eq(...expectStudentStruct);
@@ -161,7 +160,7 @@ describe.only("StudentRegistryV2 Test Suite", () => {
 
       describe("Register Students", () => {
         describe("Validations", () => {
-          it("should revert when trying to register without making payment", async () => {
+          it("should revert attempt to register without making payment", async () => {
             const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
 
             await expect(
@@ -169,7 +168,7 @@ describe.only("StudentRegistryV2 Test Suite", () => {
             ).to.be.revertedWith("You need to pay fees");
           })
           
-          it("should revert when trying to register with no name", async () => {
+          it("should revert attempt to register with no name", async () => {
             const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
 
             await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1")});
@@ -179,7 +178,7 @@ describe.only("StudentRegistryV2 Test Suite", () => {
             ).to.be.revertedWith("No name has been inputed");
           })
 
-          it("should revert when trying to register a student who is below the age of 18", async () => {
+          it("should revert attempt to register a student who is below the age of 18", async () => {
             const { deployedStudentRegistryV2, addr1 } = await loadFixture(deployUtil);
 
             await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1")});
@@ -192,11 +191,29 @@ describe.only("StudentRegistryV2 Test Suite", () => {
 
         describe("Successful Student Register", () => {
           it("should successfully regsiter a student", async () => {
-            const {deployedStudentRegistryV2, addr1} = await loadFixture(deployUtil);
+            const {deployedStudentRegistryV2, addr1, deployedStudentRegistryV2Address} = await loadFixture(deployUtil);
+
+            // Check Balance Before txn
+            const initialContractBalance = await getBalance(deployedStudentRegistryV2Address);
+            const initialPayerBalance = await getBalance(addr1.address);
 
             // Make Payment
             await deployedStudentRegistryV2.connect(addr1).payFee({ value: toEther("1")});
 
+            const finalPayerBalance = await getBalance(addr1.address);
+            const finalContractBalance = await getBalance(deployedStudentRegistryV2Address);
+
+            // Assert the balance changes
+            const initialPayerBalanceNum = parseFloat(ethers.formatEther(initialPayerBalance));
+            const finalPayerBalanceNum = parseFloat(ethers.formatEther(finalPayerBalance));
+            const initialContractBalanceNum = parseFloat(ethers.formatEther(initialContractBalance));
+            const finalContractBalanceNum = parseFloat(ethers.formatEther(finalContractBalance));
+
+            // Check that the payer's balance decreased by 1 ETH
+            expect(finalPayerBalanceNum).to.be.closeTo(initialPayerBalanceNum - 1, 0.01); 
+            // Check that the contract's balance increased by 1 ETH
+            expect(finalContractBalanceNum).to.be.closeTo(initialContractBalanceNum + 1, 0.01); 
+            
             // Register Student
             await deployedStudentRegistryV2.connect(addr1).register("Daniel", 19);
 
@@ -230,7 +247,7 @@ describe.only("StudentRegistryV2 Test Suite", () => {
 
       describe("Authorization", () => {
         describe("Validations", () => {
-          it("should revert when non-owner tries to authorize", async () => {
+          it("should revert non-owner attwmpt to authorize student", async () => {
             const {deployedStudentRegistryV2, addr1} = await loadFixture(deployUtil);
 
             await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
@@ -242,7 +259,7 @@ describe.only("StudentRegistryV2 Test Suite", () => {
             ).to.be.revertedWith("Caller not owner");
           })
 
-          it("should revert when trying to authorize student who has not paid", async () => {
+          it("should revert attempt to authorize student who has not paid", async () => {
             const { deployedStudentRegistryV2,owner, addr1 } = await loadFixture(deployUtil);
 
             await expect(
@@ -250,7 +267,7 @@ describe.only("StudentRegistryV2 Test Suite", () => {
             ).to.be.revertedWith("You need to pay fees");
           })
 
-          it("should revert when trying to authorize student who has already been authorized", async () => {
+          it("should revert attempt to authorize student who has already been authorized", async () => {
             const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
 
             await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
@@ -293,18 +310,6 @@ describe.only("StudentRegistryV2 Test Suite", () => {
         })
 
         describe("Events", () => {
-          it("should emit an event when student is added", async () => {
-            const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
-
-            await deployedStudentRegistryV2.connect(addr1).payFee({value: toEther("1")});
-            await deployedStudentRegistryV2.connect(addr1).register("Aaron", 20);
-
-            await expect( 
-              deployedStudentRegistryV2.connect(owner).authorizeStudentRegistration(addr1)
-            ).to.emit(deployedStudentRegistryV2, "AddStud")
-            .withArgs(addr1.address);
-          })
-
           it("should emit an event when student is authorized", async () => {
             const {deployedStudentRegistryV2, owner, addr1} = await loadFixture(deployUtil);
 

@@ -24,7 +24,6 @@ contract StudentRegistryV2 is Ownable {
         uint8 _stAge
     );
     event AuthorizeStudentReg(address _studentAddress, uint256 time);
-    event AddStud(address _studentAddr);
     event PaidFee(address indexed payer, uint256 amount);
     event RegisterStudent(address _addr, string name, uint8 age, uint256 time);
 
@@ -60,10 +59,6 @@ contract StudentRegistryV2 is Ownable {
     function authorizeStudentRegistration(
         address _studentAddr
     ) public onlyOwner {
-        // require(
-        //     studentsMapping[_studentAddr].studentAddr == address(0),
-        //     "You're already registered"
-        // );
         Student storage student =  studentsMapping[_studentAddr];
         require(student.hasPaid == true, "You need to pay fees");
         require(student.isAuthorized == false, "You have already been authorized");
@@ -78,7 +73,6 @@ contract StudentRegistryV2 is Ownable {
         uint256 _studentId = students.length + 1;
         Student storage student =  studentsMapping[_studentAddr];
         student.studentId = _studentId;
-        emit AddStud(_studentAddr);
     }
 
     // Function to get student by call the ID
