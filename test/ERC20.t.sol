@@ -8,6 +8,8 @@ contract ERC20ContractTest is Test {
     ERC20 public erc20Contract;
     address ownerAddress = address(0x0101);
     address randomAddress = address(0x3892);
+    address recipient = address(0x123);
+
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(
@@ -15,6 +17,8 @@ contract ERC20ContractTest is Test {
         address indexed spender,
         uint256 value
     );
+    event Owned(address indexed old, address indexed newAddress);
+
 
     error InvalidRecipient();
 
@@ -81,7 +85,6 @@ contract ERC20ContractTest is Test {
     }
 
     function test_TransferFrom() public {
-        address recipient = address(0x2938);
         address caller = address(0x2373);
         uint256 amount = 500;
 
@@ -138,4 +141,102 @@ contract ERC20ContractTest is Test {
             allowanceOfCallerAfterTransfer
         );
     }
+
+    function test_transferNormal() public {
+       uint amount = 1000;
+
+       vm.startPrank(ownerAddress);
+
+       erc20Contract.mint(ownerAddress, amount);
+       assertEq(erc20Contract.balanceOf(ownerAddress), amount);
+       
+       vm.expectEmit(true, true, false, true);
+       emit Transfer(ownerAddress, recipient, amount);
+
+       erc20Contract.transfer(recipient, amount);
+
+       assertEq(erc20Contract.balanceOf(ownerAddress), 0);
+       assertEq(erc20Contract.balanceOf(recipient), amount);
+       vm.stopPrank();
+    }
+
+
+    function test_mintEVents() public {
+    uint256 amount = 1000;
+    vm.prank(ownerAddress);
+
+    vm.expectEmit(true, true, false, true);
+    emit Transfer(address(0), randomAddress, amount);
+    erc20Contract.mint(randomAddress, amount);
+
+    assertEq(erc20Contract.balanceOf(randomAddress), amount);
+  }
+
+
+  function test_burnEvents() public {
+    uint256 amount = 1000;
+    vm.startPrank(ownerAddress);
+    erc20Contract.mint(randomAddress, amount);
+
+    assertEq(erc20Contract.balanceOf(randomAddress), amount);
+
+    vm.expectEmit(true, true, false, true);
+    emit Transfer(randomAddress, address(0), 500);
+
+    erc20Contract.burn(randomAddress, 500);
+
+    assertEq(erc20Contract.balanceOf(randomAddress), 500);
+    assertEq(erc20Contract.totalSupply(), 500);
+    vm.stopPrank();
+  } 
+
+
+  function test_emitTransfer() public {
+    uint256 mintAmount = 1000;
+    uint256 amount = 500;
+
+    vm.prank(ownerAddress);
+    erc20Contract.mint(ownerAddress, mintAmount);
+
+    assertEq(erc20Contract.balanceOf(ownerAddress), mintAmount);
+
+    vm.expectEmit(true, true, false, true);
+
+    emit Transfer(ownerAddress, recipient, amount);
+
+    vm.prank(ownerAddress);
+    erc20Contract.transfer(recipient, amount);
+
+    assertEq(erc20Contract.balanceOf(recipient), amount);
+  }
+
+  function test_emitApproval() public {
+    uint256 amount = 500;
+    address spender = address(0x2233);
+
+    vm.prank(ownerAddress);
+
+    vm.expectEmit(true, true, false, true);
+
+    emit Approval(ownerAddress, spender, amount);
+
+    bool success = erc20Contract.approve(spender, amount);
+
+    assertTrue(success);
+
+  }
+
+  function test_emitOwned() public {
+    address newOwner = address(0x545);
+    vm.prank(ownerAddress);
+
+    vm.expectEmit(true, true, false, false);
+
+    emit Owned(ownerAddress, newOwner);
+
+    bool changed = erc20Contract.changeOwner(newOwner);
+
+    assertTrue(changed);
+  }
+
 }
