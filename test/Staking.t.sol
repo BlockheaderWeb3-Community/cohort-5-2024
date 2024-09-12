@@ -136,4 +136,58 @@ contract StakingContractTest is Test {
         vm.stopPrank();
     }
 
+    function test_Withdraw() public {
+        uint amount = 1000;
+        uint stakeAmount = 10;
+        uint allowance = 700;
+
+        // Zero address cannot withdraw
+        vm.startPrank(address(0));
+        vm.expectRevert("WITHDRAW: Address zero not allowed");
+        stakingContract.withdraw(200);
+        vm.stopPrank();
+
+        vm.startPrank(addr1);
+        vm.expectRevert("WITHDRAW: Zero amount not allowed");
+        stakingContract.withdraw(0);
+        vm.stopPrank();
+
+        // mint bwc Tokens to addr1
+        vm.startPrank(ownerAddr);
+        bwcErc20TokenContract.mint(addr1, amount);
+        vm.stopPrank();
+
+        // mint receipt token to staking contract
+        vm.startPrank(ownerAddr);
+        receiptTokenContract.mint(address(stakingContract), amount);
+        rewardTokenContract.mint(address(stakingContract), 4);
+        vm.stopPrank();
+
+        // Staker must not withdraw more than stakeAmount
+        vm.startPrank(addr1);
+        bwcErc20TokenContract.approve(address(stakingContract), allowance);
+        stakingContract.stake(stakeAmount);
+        vm.expectRevert("WITHDRAW: Withdraw amount not allowed");
+        stakingContract.withdraw(1000);
+        vm.stopPrank();
+        
+        // Check for proper withdrawal time
+        vm.startPrank(addr1);
+        bwcErc20TokenContract.approve(address(stakingContract), allowance);
+        stakingContract.stake(stakeAmount);
+        vm.expectRevert("WITHDRAW: Not yet time to withdraw");
+        stakingContract.withdraw(7);
+        vm.stopPrank();
+
+        // Check balance of reward tokens
+        vm.startPrank(addr1);
+        bwcErc20TokenContract.approve(address(stakingContract), allowance);
+        receiptTokenContract.approve(address(stakingContract), allowance);
+        stakingContract.stake(stakeAmount);
+        skip(240);
+        vm.expectRevert("WITHDRAW: Insufficient reward token balance");
+        stakingContract.withdraw(8);
+        vm.stopPrank();
+    }
+
 }
