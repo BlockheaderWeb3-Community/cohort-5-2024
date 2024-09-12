@@ -79,7 +79,7 @@ contract StakingContractTest is Test {
         vm.startPrank(ownerAddr);
         bwcErc20TokenContract.mint(addr1, amount);
         vm.stopPrank();
- 
+
         // Staker does not have enough receipt tokens
         vm.startPrank(addr1);
         // check balances of addr1 and receipt token contract
@@ -133,12 +133,14 @@ contract StakingContractTest is Test {
         vm.expectEmit(true, false, true, false);
         emit TokenStaked(addr1, stakeAmount, block.timestamp);
         stakingContract.stake(100);
+        // To check that the stake function returns 'true'
+        assertEq(stakingContract.stake(100), true);
         vm.stopPrank();
     }
 
     function test_Withdraw() public {
         uint amount = 1000;
-        uint stakeAmount = 10;
+        uint stakeAmount = 300;
         uint allowance = 700;
 
         // Zero address cannot withdraw
@@ -159,35 +161,54 @@ contract StakingContractTest is Test {
 
         // mint receipt token to staking contract
         vm.startPrank(ownerAddr);
-        receiptTokenContract.mint(address(stakingContract), amount);
-        rewardTokenContract.mint(address(stakingContract), 4);
+        receiptTokenContract.mint(address(stakingContract), 400);
+        rewardTokenContract.mint(address(stakingContract), 150);
         vm.stopPrank();
 
         // Staker must not withdraw more than stakeAmount
         vm.startPrank(addr1);
+        console.log(receiptTokenContract.balanceOf(address(stakingContract)));
         bwcErc20TokenContract.approve(address(stakingContract), allowance);
-        stakingContract.stake(stakeAmount);
+        stakingContract.stake(stakeAmount); 
         vm.expectRevert("WITHDRAW: Withdraw amount not allowed");
-        stakingContract.withdraw(1000);
+        stakingContract.withdraw(360);
+        console.log(receiptTokenContract.balanceOf(address(stakingContract)));
         vm.stopPrank();
         
         // Check for proper withdrawal time
         vm.startPrank(addr1);
-        bwcErc20TokenContract.approve(address(stakingContract), allowance);
-        stakingContract.stake(stakeAmount);
         vm.expectRevert("WITHDRAW: Not yet time to withdraw");
-        stakingContract.withdraw(7);
+        stakingContract.withdraw(10);
         vm.stopPrank();
 
         // Check balance of reward tokens
         vm.startPrank(addr1);
-        bwcErc20TokenContract.approve(address(stakingContract), allowance);
-        receiptTokenContract.approve(address(stakingContract), allowance);
-        stakingContract.stake(stakeAmount);
+        receiptTokenContract.approve(address(stakingContract), 270);
         skip(240);
         vm.expectRevert("WITHDRAW: Insufficient reward token balance");
-        stakingContract.withdraw(8);
+        stakingContract.withdraw(100);
         vm.stopPrank();
+
+        vm.startPrank(ownerAddr);
+        rewardTokenContract.mint(address(stakingContract), 400);
+        vm.stopPrank();
+        // vm.startPrank(addr1);
+        // stakingContract.stake(stakeAmount);
+        // skip(240);
+        // vm.expectRevert("WITHDRAW: Insufficient BWC token balance");
+        // stakingContract.withdraw(200);
+        // vm.stopPrank();
+
+        vm.startPrank(addr1);
+        vm.expectRevert("WITHDRAW: Receipt token allowance too low");
+        stakingContract.withdraw(275);
+        vm.stopPrank();
+
+        // Check for proper balance reduction
+        vm.startPrank(addr1);
+        stakingContract.withdraw(200);
+        assertEq(stakingContract.getStakers(addr1).amount, stakeAmount - 200);
+
     }
 
 }
