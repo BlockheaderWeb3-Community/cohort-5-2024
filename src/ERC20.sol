@@ -160,7 +160,7 @@ contract ERC20 is IERC20 {
         address recipient,
         uint256 amount
     ) external returns (bool) {
-        require(msg.sender != recipient, "cannot transfer to self");
+        // require(msg.sender != recipient, "cannot transfer to self");
         if (recipient == address(0)) {
             revert InvalidRecipient();
         }
