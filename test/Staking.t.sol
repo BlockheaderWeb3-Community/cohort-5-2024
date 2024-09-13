@@ -192,23 +192,50 @@ contract StakingContractTest is Test {
         vm.startPrank(ownerAddr);
         rewardTokenContract.mint(address(stakingContract), 400);
         vm.stopPrank();
-        // vm.startPrank(addr1);
-        // stakingContract.stake(stakeAmount);
-        // skip(240);
-        // vm.expectRevert("WITHDRAW: Insufficient BWC token balance");
-        // stakingContract.withdraw(200);
-        // vm.stopPrank();
 
         vm.startPrank(addr1);
         vm.expectRevert("WITHDRAW: Receipt token allowance too low");
         stakingContract.withdraw(275);
         vm.stopPrank();
 
-        // Check for proper balance reduction
         vm.startPrank(addr1);
+        uint balanceBeforeWithdraw = receiptTokenContract.balanceOf(address(stakingContract));
+
+        uint bwcBalanceBeforeWithdraw = bwcErc20TokenContract.balanceOf(addr1);
+
+        uint totalStakedBeforeWithdraw = stakingContract.totalStaked();
         stakingContract.withdraw(200);
+
+        // Check for proper balance reduction
         assertEq(stakingContract.getStakers(addr1).amount, stakeAmount - 200);
 
+        uint balanceAfterWithdraw = receiptTokenContract.balanceOf(address(stakingContract));
+
+        uint bwcBalanceAfterWithdraw = bwcErc20TokenContract.balanceOf(addr1);
+
+        uint totalStakedAfterWithdraw = stakingContract.totalStaked();
+        // Check successful transfer of receipt tokens From addr1 to stakingContract
+        assertEq(balanceBeforeWithdraw + 200, balanceAfterWithdraw);
+
+        // Check successful transfer of reward tokens to addr1
+        assertEq(rewardTokenContract.balanceOf(addr1), 400);
+        // Check successful transfer of bwc tokens to addr1
+        assertEq(bwcBalanceBeforeWithdraw + 200, bwcBalanceAfterWithdraw);
+        // Check that totalStaked is properly deducted
+        assertEq(totalStakedBeforeWithdraw - 200, totalStakedAfterWithdraw);
+
+        console.log(bwcErc20TokenContract.balanceOf(addr1));
+        vm.stopPrank();
+
+        // Withdraw Events
+        vm.startPrank(addr1);
+        vm.expectEmit(true, false, true, false);
+        emit TokenWithdraw(addr1, 50, block.timestamp);
+        stakingContract.withdraw(50);
+
+        // Check that Withdraw function returns true
+        assertEq(stakingContract.withdraw(10), true);
+        vm.stopPrank();
     }
 
 }
