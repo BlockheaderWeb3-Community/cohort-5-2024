@@ -81,14 +81,13 @@ contract StakingContractTest is Test {
         assertEq(stakedAmount, 0, "Stake amount not updated correctly");
         assertEq(status, false, "Status should be true");
 
-        // testing events
-        // vm.expectEmit();
-        // emit TokenStaked(callingAddress, callerStakingAmount, block.timestamp);
-
         // start tstake transaction
         vm.warp(block.timestamp);
         vm.startPrank(callingAddress);
         bwcErc20TokenContract.approve(stakingContractAddress, callerStakingAmount);
+        vm.expectEmit(true, false, false, false);
+        emit TokenStaked(callingAddress, callerStakingAmount, block.timestamp);
+
         stakingContract.stake(callerStakingAmount);
         vm.stopPrank();
 
@@ -130,7 +129,7 @@ contract StakingContractTest is Test {
         stakingContract.withdraw(200);
     }
 
-    function testRevert_WithdrawSuccesfully() public {
+    function test_WithdrawSuccesfully() public {
         test_StakeSuccessful();
 
         (uint256 timeStaked, uint256 stakedAmount, bool status) = stakingContract.stakers(callingAddress);
@@ -139,9 +138,15 @@ contract StakingContractTest is Test {
         receiptTokenContract.approve(stakingContractAddress, 1000);
         vm.stopPrank();
 
+        vm.expectEmit(true, true, true, false);
+        emit TokenWithdraw(callingAddress, 400, timeStaked + 5 days);
+
         vm.warp(timeStaked + 5 days);
         vm.prank(callingAddress);
         stakingContract.withdraw(200);
+
+        ( timeStaked,  stakedAmount,  status) = stakingContract.stakers(callingAddress);
+        assertEq(stakedAmount, 0, "Amount Supposed to be 0");
     }
 
 }
