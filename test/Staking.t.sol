@@ -130,7 +130,7 @@ contract StakingContractTest is Test {
         assertEq(receiptTokenContract.balanceOf(addr1), stakeAmount);
 
         // Events
-        vm.expectEmit(true, false, true, false);
+        vm.expectEmit(true, false, false, false);
         emit TokenStaked(addr1, stakeAmount, block.timestamp);
         stakingContract.stake(100);
         // To check that the stake function returns 'true'
@@ -167,12 +167,12 @@ contract StakingContractTest is Test {
 
         // Staker must not withdraw more than stakeAmount
         vm.startPrank(addr1);
-        console.log(receiptTokenContract.balanceOf(address(stakingContract)));
+
         bwcErc20TokenContract.approve(address(stakingContract), allowance);
         stakingContract.stake(stakeAmount); 
         vm.expectRevert("WITHDRAW: Withdraw amount not allowed");
         stakingContract.withdraw(360);
-        console.log(receiptTokenContract.balanceOf(address(stakingContract)));
+
         vm.stopPrank();
         
         // Check for proper withdrawal time
@@ -224,13 +224,12 @@ contract StakingContractTest is Test {
         // Check that totalStaked is properly deducted
         assertEq(totalStakedBeforeWithdraw - 200, totalStakedAfterWithdraw);
 
-        console.log(bwcErc20TokenContract.balanceOf(addr1));
         vm.stopPrank();
 
         // Withdraw Events
         vm.startPrank(addr1);
-        vm.expectEmit(true, false, true, false);
-        emit TokenWithdraw(addr1, 50, block.timestamp);
+        vm.expectEmit(true, false, false, false);
+        emit TokenWithdraw(addr1, 70, block.timestamp);
         stakingContract.withdraw(50);
 
         // Check that Withdraw function returns true
