@@ -7,6 +7,7 @@ import {ERC20} from "../src/ERC20.sol";
 
 contract StakingContractTest is Test {
     StakingContract public stakingContract;
+
     struct StakeDetail {
         uint256 timeStaked;
         uint256 amount;
@@ -15,7 +16,7 @@ contract StakingContractTest is Test {
 
     address ownerAddress = address(0x0101);
     address callingAddress = address(0x333);
-    uint256 constant mintConst = 1000; 
+    uint256 constant mintConst = 1000;
 
     // Events
     event TokenStaked(address indexed staker, uint256 amount, uint256 time);
@@ -39,11 +40,7 @@ contract StakingContractTest is Test {
         receiptTokenAddress = address(receiptTokenContract);
         rewardTokenAddress = address(rewardTokenContract);
         vm.prank(ownerAddress);
-        stakingContract = new StakingContract(
-            bwcTokenAddress,
-            receiptTokenAddress,
-            rewardTokenAddress
-        );
+        stakingContract = new StakingContract(bwcTokenAddress, receiptTokenAddress, rewardTokenAddress);
         stakingContractAddress = address(stakingContract);
     }
 
@@ -54,22 +51,22 @@ contract StakingContractTest is Test {
         assertEq(stakingContract.totalStaked(), 0);
     }
 
-    function testRevert_StakeWillRevertifZeroAddress () public {
+    function testRevert_StakeWillRevertifZeroAddress() public {
         vm.expectRevert("STAKE: Address zero not allowed");
         vm.startPrank(address(0));
         stakingContract.stake(200);
     }
 
-    function testRevert_StakeWillRevertifAmountLessThanZero () public {
+    function testRevert_StakeWillRevertifAmountLessThanZero() public {
         vm.expectRevert("STAKE: Zero amount not allowed");
         stakingContract.stake(0);
     }
 
-    function test_StakeSuccessful () public {
+    function test_StakeSuccessful() public {
         uint256 callerStakingAmount = 200;
         // mint all needed toknens
         bwcErc20TokenContract.mint(callingAddress, mintConst);
-        receiptTokenContract.mint(stakingContractAddress, mintConst );
+        receiptTokenContract.mint(stakingContractAddress, mintConst);
         rewardTokenContract.mint(stakingContractAddress, mintConst);
 
         //check if they were minted succesfully
@@ -102,18 +99,18 @@ contract StakingContractTest is Test {
         assertApproxEqRel(timeStaked, block.timestamp, 1, "Time staked is not close enough to block timestamp");
     }
 
-    function testRevert_WithdrawWillRevertifZeroAddress () public {
+    function testRevert_WithdrawWillRevertifZeroAddress() public {
         vm.expectRevert("WITHDRAW: Address zero not allowed");
         vm.startPrank(address(0));
         stakingContract.withdraw(200);
     }
 
-    function testRevert_WithdrawWillRevertifAmountLessThanZero () public {
+    function testRevert_WithdrawWillRevertifAmountLessThanZero() public {
         vm.expectRevert("WITHDRAW: Zero amount not allowed");
         stakingContract.withdraw(0);
     }
 
-    function testRevert_WithdrawWillRevertifStakeAmountGreaterThanWithdrawAmount () public {
+    function testRevert_WithdrawWillRevertifStakeAmountGreaterThanWithdrawAmount() public {
         test_StakeSuccessful();
         vm.expectRevert("WITHDRAW: Withdraw amount not allowed");
         vm.prank(callingAddress);
@@ -145,8 +142,7 @@ contract StakingContractTest is Test {
         vm.prank(callingAddress);
         stakingContract.withdraw(200);
 
-        ( timeStaked,  stakedAmount,  status) = stakingContract.stakers(callingAddress);
+        (timeStaked, stakedAmount, status) = stakingContract.stakers(callingAddress);
         assertEq(stakedAmount, 0, "Amount Supposed to be 0");
     }
-
 }

@@ -20,11 +20,7 @@ contract ERC20 is IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     /**
      * @dev Emitted when ownership of the contract is transferred from `old` to `new`.
@@ -114,10 +110,7 @@ contract ERC20 is IERC20 {
      * @return True if the operation was successful.
      * @dev Emits a {Transfer} event.
      */
-    function transfer(
-        address recipient,
-        uint256 amount
-    ) external returns (bool) {
+    function transfer(address recipient, uint256 amount) external returns (bool) {
         if (recipient == address(0)) {
             revert InvalidRecipient();
         }
@@ -155,18 +148,14 @@ contract ERC20 is IERC20 {
      * @return True if the operation was successful.
      * @dev Emits a {Transfer} event.
      */
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {
         // require(msg.sender != recipient, "cannot transfer to self");
         if (recipient == address(0)) {
             revert InvalidRecipient();
         }
 
-        uint b = allowance[sender][msg.sender];
-        uint c = b - amount;
+        uint256 b = allowance[sender][msg.sender];
+        uint256 c = b - amount;
         if (c > b) {
             revert InsufficientBalance();
         }

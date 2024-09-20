@@ -1,5 +1,3 @@
-
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
@@ -14,7 +12,6 @@ contract ERC20ContractTest is Test {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Owned(address indexed old, address indexed newAddress);
-
 
     error InvalidRecipient();
 
@@ -73,7 +70,7 @@ contract ERC20ContractTest is Test {
         erc20Contract.mint(ownerAddress, 1000);
         assertEq(erc20Contract.balanceOf(ownerAddress), 1000, "Amount supposed to be 1000");
         vm.expectEmit(true, true, false, true);
-        emit Transfer(ownerAddress ,recipient, 500);
+        emit Transfer(ownerAddress, recipient, 500);
         vm.prank(ownerAddress);
         erc20Contract.transfer(recipient, 500);
         assertEq(erc20Contract.balanceOf(ownerAddress), 500, "Amount supposed to be 500");
@@ -90,8 +87,6 @@ contract ERC20ContractTest is Test {
         erc20Contract.transfer(address(0), 500);
         assertEq(erc20Contract.balanceOf(ownerAddress), 1000, "Amount supposed to be 500");
     }
-
-    
 
     function test_TransferFrom() public {
         address recipient = address(0x2938);
@@ -120,7 +115,7 @@ contract ERC20ContractTest is Test {
 
         uint256 balanceOfSenderBeforeTransfer = erc20Contract.balanceOf(randomAddress);
         uint256 allowanceOfCallerBeforeTransfer = erc20Contract.allowance(randomAddress, caller);
-        
+
         //testing events for transfer
         vm.expectEmit(true, true, false, true);
         emit Transfer(randomAddress, recipient, amount);
@@ -144,11 +139,11 @@ contract ERC20ContractTest is Test {
         emit Owned(ownerAddress, newowner);
         vm.prank(ownerAddress);
         erc20Contract.changeOwner(newowner);
-        assertEq(erc20Contract.owner(), newowner, "Owner not changed");        
+        assertEq(erc20Contract.owner(), newowner, "Owner not changed");
     }
 
-    function testRevert_changeOwnerShouldReverIfUnauthorized () public {
-        address newowner = address(0x2938);      
+    function testRevert_changeOwnerShouldReverIfUnauthorized() public {
+        address newowner = address(0x2938);
         vm.expectRevert("Unauthorized");
         vm.prank(randomAddress);
         erc20Contract.changeOwner(newowner);
@@ -156,7 +151,7 @@ contract ERC20ContractTest is Test {
 
     function test_Burn() public {
         vm.startPrank(ownerAddress);
-        address add = address(0x2938);      
+        address add = address(0x2938);
         assertEq(erc20Contract.balanceOf(add), 0, "Token balance should be 0");
         erc20Contract.mint(add, 1000);
         assertEq(erc20Contract.balanceOf(add), 1000, "Token balance should be 1000");
