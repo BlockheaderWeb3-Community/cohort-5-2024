@@ -8,8 +8,11 @@ contract ERC20ContractTest is Test {
     ERC20 public erc20Contract;
     address ownerAddress = address(0x0101);
     address randomAddress = address(0x3892);
+    address burnAdrr = address(0x125);
+
 
     event Transfer(address indexed from, address indexed to, uint256 value);
+
     event Approval(
         address indexed owner,
         address indexed spender,
@@ -17,6 +20,7 @@ contract ERC20ContractTest is Test {
     );
 
     error InvalidRecipient();
+    error Underflow();
 
     function setUp() public {
         vm.prank(ownerAddress);
@@ -138,4 +142,68 @@ contract ERC20ContractTest is Test {
             allowanceOfCallerAfterTransfer
         );
     }
+
+    function test_ChangeOwner() public {
+        address newOwner = address(0x143);
+        ownerAddress = newOwner;
+
+        vm.startPrank(ownerAddress);
+
+        assertEq(ownerAddress, newOwner, "This is the new owner");
+
+        vm.stopPrank();
+    }
+
+    function test_Burn() public {
+        uint256 amount = 1000;
+        vm.startPrank(ownerAddress);
+
+        erc20Contract.mint(burnAdrr, amount);
+
+        erc20Contract.burn(burnAdrr, amount);
+
+        assertEq(erc20Contract.balanceOf(burnAdrr), 0);
+
+        vm.stopPrank();
+    }
+
+    function test_BurnFromNonZeroAddress() public {
+        uint256 initialSupply = 200;
+        uint256 burnAmount = 300;  // Attempt to burn more than the initial supply to cause underflow
+        address burnAddr = address(0x125);
+
+        vm.startPrank(ownerAddress);
+        erc20Contract.mint(burnAddr, initialSupply);
+
+        // Expect the generic panic error code for underflow (0x11)
+        vm.expectRevert(abi.encodeWithSignature("Panic(uint256)", 0x11));
+
+        // vm.expectRevert(Underflow.selector);
+
+
+        // Call the burn function that should revert due to underflow
+        erc20Contract.burn(burnAddr, burnAmount);
+
+        vm.stopPrank();
+    }
+
+
+    function test_Approve() public {
+        address spender = address(0x321);
+        uint256 amount = 100;
+
+        vm.startPrank(address(this));
+        bool success = erc20Contract.approve(spender, amount);
+        assertTrue(success);
+        assertEq(erc20Contract.allowance(address(this), spender), amount);
+
+        vm.expectRevert(InvalidRecipient.selector);
+
+        erc20Contract.approve(address(0), amount);
+
+        vm.stopPrank();
+
+        emit Approval(msg.sender, spender, amount);
+    }
+
 }

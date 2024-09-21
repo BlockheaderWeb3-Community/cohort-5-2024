@@ -1,0 +1,175 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IStudentRegistry",
+  "sourceName": "contracts/IStudentRegistry.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_studentAddr",
+          "type": "address"
+        }
+      ],
+      "name": "addStudent",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_studentAddr",
+          "type": "address"
+        }
+      ],
+      "name": "authorizeStudentRegistration",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_studentAddr",
+          "type": "address"
+        }
+      ],
+      "name": "deleteStudent",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "_studentID",
+          "type": "uint8"
+        }
+      ],
+      "name": "getStudent",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "studentAddr",
+              "type": "address"
+            },
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "studentId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "age",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bool",
+              "name": "hasPaid",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "isAuthorized",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct Student",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_studentAddr",
+          "type": "address"
+        }
+      ],
+      "name": "getStudentFromMapping",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "studentAddr",
+              "type": "address"
+            },
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "studentId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "age",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bool",
+              "name": "hasPaid",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "isAuthorized",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct Student",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_studentAddr",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_name",
+          "type": "string"
+        },
+        {
+          "internalType": "uint8",
+          "name": "_age",
+          "type": "uint8"
+        }
+      ],
+      "name": "register",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

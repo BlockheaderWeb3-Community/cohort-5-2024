@@ -36,6 +36,10 @@ contract StakingContract {
     address public rewardTokenAddress;
     uint256 public totalStaked;
 
+    function getStakers(address _addr) public view returns (StakeDetail memory){
+        return stakers[_addr];
+    }
+
     //////////////////
     // CONSTANTS
     //////////////////
